@@ -1,0 +1,22 @@
+export const colors = {
+	success: 0x6aa84f,
+	error: 0xcc0000,
+	warn: 0xf1c232,
+
+	blue: 0x0000ff,
+	red: 0xff0000,
+}
+
+export const emoji = {
+	UNRANKED: '<:Unranked:1422076454136451125>',
+	IRON: '<:Iron:1422076633023778916>',
+	BRONZE: '<:Bronze:1422076660521635840>',
+	SILVER: '<:Silver:1422076917061910682>',
+	GOLD: '<:Gold:1422076951203545110>',
+	PLATINUM: '<:Platinum:1422076983176724571>',
+	EMERALD: '<:Emerald:1422077015468539974>',
+	DIAMOND: '<:Diamond:1422077043645878492>',
+	MASTER: '<:Master:1422077089367986186>',
+	GRANDMASTER: '<:Grandmaster:1422077123144843274>',
+	CHALLENGER: '<:Challenger:1422077147501297664>',
+}
