@@ -2,7 +2,7 @@ import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js'
 import { colors, emoji } from '@/config'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
-import { apiClient } from '@/utils/apiClient'
+import { apiClient } from '@/utils/api-client'
 
 export default {
 	command: new SlashCommandBuilder()

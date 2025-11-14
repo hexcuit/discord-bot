@@ -2,7 +2,7 @@ import { Events } from 'discord.js'
 import type { Event } from '@/types/event'
 import { handleAutocomplete } from './autocomplete'
 import { handleButton } from './button'
-import { handleChatInputCommand } from './chatInputCommand'
+import { handleChatInputCommand } from './chatInput-command'
 import { handleModalSubmit } from './modalSubmit'
 
 export default {

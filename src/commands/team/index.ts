@@ -2,7 +2,7 @@ import { EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder } from 'di
 import { colors, emoji } from '@/config'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
-import { apiClient } from '@/utils/apiClient'
+import { apiClient } from '@/utils/api-client'
 
 // 型定義
 interface RankInfo {
