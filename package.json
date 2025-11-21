@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "bun --hot src/index.ts",
-		"deploy-command": "bun scripts/deploy-commands.ts",
+		"deploy-commands": "bun scripts/deploy-commands.ts",
 		"check": "biome check",
 		"check:fix": "biome check --fix --unsafe",
 		"typecheck": "tsc --noEmit",
