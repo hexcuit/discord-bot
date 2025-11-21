@@ -14,5 +14,5 @@ services:
         max-file: "3"
 
 networks:
-  discord-bot-network:
+  hexcuit-discord-bot-network:
     driver: bridge
