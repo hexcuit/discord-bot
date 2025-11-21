@@ -1,0 +1,18 @@
+services:
+  discord-bot:
+    image: ghcr.io/hexcuit/discord-bot:latest
+    container_name: hexcuit-discord-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - hexcuit-discord-bot-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  discord-bot-network:
+    driver: bridge

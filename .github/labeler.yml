@@ -1,0 +1,56 @@
+# See https://github.com/actions/labeler
+
+# Area labels
+area/lib:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/lib/**
+
+area/services:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/services/**
+
+area/commands:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/commands/**
+
+area/config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/config/**
+      - '*.config.js'
+      - tsconfig.json
+
+area/workflows:
+  - changed-files:
+    - any-glob-to-any-file:
+      - .github/workflows/**
+      - .github/labeler.yml
+
+# Type labels
+type/docs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - CLAUDE.md
+
+type/dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - package.json
+      - bun.lockb
+
+# Service labels
+service/twitch:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/services/twitch.ts
+      - src/lib/twitch.ts
+
+service/youtube:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/services/youtube.ts
+      - src/lib/youtube.ts

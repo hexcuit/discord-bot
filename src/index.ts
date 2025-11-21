@@ -1,6 +1,6 @@
 import { ActivityType, Client, GatewayIntentBits } from 'discord.js'
-import { loadCommands } from '@/loaders/commands'
-import { loadEvents } from '@/loaders/events'
+import { loadCommands } from '@/handlers/commands'
+import { loadEvents } from '@/handlers/events'
 import version from '../package.json'
 
 // 新しいClientインスタンスを作成
@@ -17,9 +17,8 @@ const client = new Client({
 	},
 })
 
-// コマンドを格納するコレクション
 client.commands = await loadCommands()
 
 await loadEvents(client)
 
-client.login(Bun.env.DISCORD_TOKEN)
+client.login(import.meta.env.DISCORD_TOKEN)
