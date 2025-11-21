@@ -1,5 +1,11 @@
 # @hexcuit/discord-bot
 
+## 0.3.3
+
+### Patch Changes
+
+- [#6](https://github.com/hexcuit/discord-bot/pull/6) [`82e7549`](https://github.com/hexcuit/discord-bot/commit/82e75492eca5cd1f63c22f8673e00e13d6156574) Thanks [@11gather11](https://github.com/11gather11)! - fix scripts
+
 ## 0.3.2
 
 ### Patch Changes
