@@ -3,6 +3,7 @@ import {
 	ButtonBuilder,
 	ButtonStyle,
 	EmbedBuilder,
+	InteractionContextType,
 	MessageFlags,
 	SlashCommandBuilder,
 } from 'discord.js'
@@ -102,6 +103,7 @@ export default {
 	command: new SlashCommandBuilder()
 		.setName('recruit')
 		.setDescription('カスタムゲームの募集を作成します（定員10人）')
+		.setContexts(InteractionContextType.Guild)
 		.addBooleanOption((option) =>
 			option.setName('anonymous').setDescription('匿名モード（参加者名を非表示にし、人数のみ表示）').setRequired(false),
 		)
@@ -115,11 +117,12 @@ export default {
 		const recruitmentId = crypto.randomUUID()
 
 		const embed = createEmbed(anonymous, [], CAPACITY, interaction.user.id, startTime)
-		const buttons = createButtons(recruitmentId, false)
+		const disabledButtons = createButtons(recruitmentId, true)
 
+		// 最初はボタンを無効化して送信（API完了前のクリックを防止）
 		await interaction.reply({
 			embeds: [embed],
-			components: [buttons],
+			components: [disabledButtons],
 		})
 
 		const reply = await interaction.fetchReply()
@@ -144,7 +147,15 @@ export default {
 					embeds: [],
 					components: [],
 				})
+				return
 			}
+
+			// API成功後にボタンを有効化
+			const enabledButtons = createButtons(recruitmentId, false)
+			await interaction.editReply({
+				embeds: [embed],
+				components: [enabledButtons],
+			})
 		} catch (error) {
 			logger.error('募集作成エラー:', error)
 			await interaction.editReply({
@@ -204,6 +215,16 @@ export default {
 				const recruitResponse = await apiClient.recruit[':id'].$get({
 					param: { id: recruitmentId },
 				})
+
+				if (!recruitResponse.ok) {
+					logger.error('募集情報取得失敗:', recruitResponse.status)
+					await interaction.reply({
+						content: '募集情報の取得に失敗しました。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
 				const recruitData = (await recruitResponse.json()) as {
 					recruitment: {
 						anonymous: string
@@ -211,6 +232,8 @@ export default {
 						startTime: string | null
 					}
 				}
+
+				const isAnonymous = recruitData.recruitment.anonymous === 'true'
 
 				if (data.isFull) {
 					const fullEmbed = createFullEmbed(
@@ -229,7 +252,7 @@ export default {
 					})
 				} else {
 					const embed = createEmbed(
-						recruitData.recruitment.anonymous === 'true',
+						isAnonymous,
 						data.participants,
 						CAPACITY,
 						recruitData.recruitment.creatorId,
@@ -270,6 +293,16 @@ export default {
 				const recruitResponse = await apiClient.recruit[':id'].$get({
 					param: { id: recruitmentId },
 				})
+
+				if (!recruitResponse.ok) {
+					logger.error('募集情報取得失敗:', recruitResponse.status)
+					await interaction.reply({
+						content: '募集情報の取得に失敗しました。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
 				const recruitData = (await recruitResponse.json()) as {
 					recruitment: {
 						anonymous: string
@@ -278,8 +311,10 @@ export default {
 					}
 				}
 
+				const isAnonymous = recruitData.recruitment.anonymous === 'true'
+
 				const embed = createEmbed(
-					recruitData.recruitment.anonymous === 'true',
+					isAnonymous,
 					data.participants,
 					CAPACITY,
 					recruitData.recruitment.creatorId,
