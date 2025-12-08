@@ -1,5 +1,11 @@
 # @hexcuit/discord-bot
 
+## 0.5.1
+
+### Patch Changes
+
+- [#25](https://github.com/hexcuit/discord-bot/pull/25) [`d4cab55`](https://github.com/hexcuit/discord-bot/commit/d4cab55b186df635da17b9a863b8746d69a7894e) Thanks [@11gather11](https://github.com/11gather11)! - 匿名募集のタイトルに「（匿名）」を表示するように改善
+
 ## 0.5.0
 
 ### Minor Changes
