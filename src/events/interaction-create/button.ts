@@ -2,7 +2,12 @@ import type { ButtonInteraction, CacheType } from 'discord.js'
 import { logger } from '@/lib/logger'
 
 export const handleButton = (interaction: ButtonInteraction<CacheType>) => {
-	const command = interaction.client.commands.get(interaction.customId)
+	// customIdをパース: "commandName" または "commandName:action:data"
+	const [commandName] = interaction.customId.split(':')
+	if (!commandName) {
+		return
+	}
+	const command = interaction.client.commands.get(commandName)
 	if (!command) {
 		return
 	}
