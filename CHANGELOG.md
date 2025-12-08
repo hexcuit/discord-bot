@@ -1,5 +1,15 @@
 # @hexcuit/discord-bot
 
+## 0.5.0
+
+### Minor Changes
+
+- [#23](https://github.com/hexcuit/discord-bot/pull/23) [`e09f2eb`](https://github.com/hexcuit/discord-bot/commit/e09f2ebca9429c65e4f40b3eafe777391bd38053) Thanks [@11gather11](https://github.com/11gather11)! - 募集終了ボタンと匿名モードの改善
+
+  - 募集終了ボタンを追加（主催者のみ操作可能）
+  - 匿名モードでコマンド実行者が非表示になるよう改善
+  - @hexcuit/server を 0.3.0 に更新
+
 ## 0.4.0
 
 ### Minor Changes
