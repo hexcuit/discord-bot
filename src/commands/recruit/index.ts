@@ -30,7 +30,8 @@ const createEmbed = (
 	creatorId: string,
 	startTime?: string | null,
 ) => {
-	const embed = new EmbedBuilder().setTitle('カスタム募集').setColor(colors.success)
+	const title = anonymous ? 'カスタム募集（匿名）' : 'カスタム募集'
+	const embed = new EmbedBuilder().setTitle(title).setColor(colors.success)
 
 	if (startTime) {
 		embed.addFields({
@@ -111,10 +112,8 @@ const createClosedEmbed = (
 	creatorId: string,
 	startTime?: string | null,
 ) => {
-	const embed = new EmbedBuilder()
-		.setTitle('募集終了')
-		.setDescription('この募集は終了しました。')
-		.setColor(colors.error)
+	const title = anonymous ? '募集終了（匿名）' : '募集終了'
+	const embed = new EmbedBuilder().setTitle(title).setDescription('この募集は終了しました。').setColor(colors.error)
 
 	if (startTime) {
 		embed.addFields({
