@@ -1,5 +1,16 @@
 # @hexcuit/discord-bot
 
+## 0.4.0
+
+### Minor Changes
+
+- [#21](https://github.com/hexcuit/discord-bot/pull/21) [`54da145`](https://github.com/hexcuit/discord-bot/commit/54da14568453bd44272df66e216581dba37e8924) Thanks [@11gather11](https://github.com/11gather11)! - Add /recruit command for custom game recruitment
+
+  - 10 person capacity with join/cancel buttons
+  - Anonymous mode (show count only) and normal mode (show participant list)
+  - Mention all participants when full
+  - Guild-only command with proper error handling
+
 ## 0.3.5
 
 ### Patch Changes
