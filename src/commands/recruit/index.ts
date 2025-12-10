@@ -80,6 +80,11 @@ const createButtons = (recruitmentId: string, disabled: boolean) => {
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
+			.setCustomId(`recruit:force_start:${recruitmentId}`)
+			.setLabel('強制開始')
+			.setStyle(ButtonStyle.Primary)
+			.setDisabled(disabled),
+		new ButtonBuilder()
 			.setCustomId(`recruit:close:${recruitmentId}`)
 			.setLabel('募集終了')
 			.setStyle(ButtonStyle.Secondary)
@@ -467,6 +472,90 @@ export default {
 				await interaction.update({
 					embeds: [embed],
 					components: [buttons],
+				})
+			} else if (action === 'force_start') {
+				// 募集情報取得
+				const recruitResponse = await apiClient.recruit[':id'].$get({
+					param: { id: recruitmentId },
+				})
+
+				if (!recruitResponse.ok) {
+					logger.error('募集情報取得失敗:', recruitResponse.status)
+					await interaction.reply({
+						content: '募集情報の取得に失敗しました。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
+				const recruitData = (await recruitResponse.json()) as {
+					recruitment: {
+						anonymous: string
+						creatorId: string
+						startTime: string | null
+						status: string
+					}
+					participants: { discordId: string }[]
+				}
+
+				// 主催者チェック
+				if (recruitData.recruitment.creatorId !== interaction.user.id) {
+					await interaction.reply({
+						content: '強制開始できるのは主催者のみです。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
+				// 既に終了済みチェック
+				if (recruitData.recruitment.status === 'closed') {
+					await interaction.reply({
+						content: 'この募集は既に終了しています。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
+				// 参加者がいない場合
+				if (recruitData.participants.length === 0) {
+					await interaction.reply({
+						content: '参加者がいないため開始できません。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
+				// 募集終了API呼び出し（物理削除）
+				const closeResponse = await apiClient.recruit[':id'].$delete({
+					param: { id: recruitmentId },
+				})
+
+				if (!closeResponse.ok) {
+					logger.error('募集終了失敗:', closeResponse.status)
+					await interaction.reply({
+						content: '強制開始に失敗しました。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
+				const participants = recruitData.participants.map((p) => p.discordId)
+
+				const fullEmbed = createFullEmbed(
+					participants,
+					recruitData.recruitment.creatorId,
+					recruitData.recruitment.startTime,
+					existingDescription,
+				)
+
+				await interaction.update({
+					embeds: [fullEmbed],
+					components: [],
+				})
+
+				const mentions = participants.map((id: string) => `<@${id}>`).join(' ')
+				await interaction.followUp({
+					content: `強制開始! ${mentions}`,
 				})
 			} else if (action === 'close') {
 				// 募集情報取得
