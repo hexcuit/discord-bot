@@ -1,5 +1,15 @@
 # @hexcuit/discord-bot
 
+## 0.7.0
+
+### Minor Changes
+
+- [#36](https://github.com/hexcuit/discord-bot/pull/36) [`0b67d85`](https://github.com/hexcuit/discord-bot/commit/0b67d852fea29b12d9e94994361dd92e2626b3d4) Thanks [@11gather11](https://github.com/11gather11)! - /random コマンドを削除し、/team コマンドにサブコマンドとして統合
+
+  - `/team balance` - ランクによる実力差を考慮したチーム分け
+  - `/team random` - 完全ランダムでチーム分け
+  - 共通ロジックを `shared.ts` に分離してコードの重複を削減
+
 ## 0.6.0
 
 ### Minor Changes
