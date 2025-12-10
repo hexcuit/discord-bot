@@ -1,5 +1,16 @@
 # @hexcuit/discord-bot
 
+## 0.6.0
+
+### Minor Changes
+
+- [#27](https://github.com/hexcuit/discord-bot/pull/27) [`c114e97`](https://github.com/hexcuit/discord-bot/commit/c114e97b266f30ec87ae37a76131003ed1298697) Thanks [@11gather11](https://github.com/11gather11)! - /recruit コマンドをサブコマンド構造に変更し、description オプションを追加
+
+  - `/recruit create` - 通常募集を作成
+  - `/recruit anonymous` - 匿名募集を作成
+  - `description`オプションで募集要項を設定可能（例: ワイワイやりましょう！）
+  - 参加/キャンセル時に description が維持されるよう改善
+
 ## 0.5.1
 
 ### Patch Changes
