@@ -29,9 +29,14 @@ const createEmbed = (
 	capacity: number,
 	creatorId: string,
 	startTime?: string | null,
+	description?: string | null,
 ) => {
 	const title = anonymous ? 'カスタム募集（匿名）' : 'カスタム募集'
 	const embed = new EmbedBuilder().setTitle(title).setColor(colors.success)
+
+	if (description) {
+		embed.setDescription(description)
+	}
 
 	if (startTime) {
 		embed.addFields({
@@ -82,8 +87,14 @@ const createButtons = (recruitmentId: string, disabled: boolean) => {
 	)
 }
 
-const createFullEmbed = (participants: string[], creatorId: string, startTime?: string | null) => {
-	const embed = new EmbedBuilder().setTitle('募集完了!').setDescription('定員に達しました!').setColor(colors.success)
+const createFullEmbed = (
+	participants: string[],
+	creatorId: string,
+	startTime?: string | null,
+	description?: string | null,
+) => {
+	const fullDescription = description ? `${description}\n\n定員に達しました!` : '定員に達しました!'
+	const embed = new EmbedBuilder().setTitle('募集完了!').setDescription(fullDescription).setColor(colors.success)
 
 	if (startTime) {
 		embed.addFields({
@@ -111,9 +122,11 @@ const createClosedEmbed = (
 	capacity: number,
 	creatorId: string,
 	startTime?: string | null,
+	description?: string | null,
 ) => {
 	const title = anonymous ? '募集終了（匿名）' : '募集終了'
-	const embed = new EmbedBuilder().setTitle(title).setDescription('この募集は終了しました。').setColor(colors.error)
+	const closedDescription = description ? `${description}\n\nこの募集は終了しました。` : 'この募集は終了しました。'
+	const embed = new EmbedBuilder().setTitle(title).setDescription(closedDescription).setColor(colors.error)
 
 	if (startTime) {
 		embed.addFields({
@@ -148,17 +161,45 @@ export default {
 		.setName('recruit')
 		.setDescription('カスタムゲームの募集を作成します（定員10人）')
 		.setContexts(InteractionContextType.Guild)
-		.addBooleanOption((option) =>
-			option.setName('anonymous').setDescription('匿名モード（参加者名を非表示にし、人数のみ表示）').setRequired(false),
+		.addSubcommand((subcommand) =>
+			subcommand
+				.setName('create')
+				.setDescription('通常募集を作成（参加者名を表示）')
+				.addStringOption((option) =>
+					option.setName('description').setDescription('募集要項（例: ワイワイやりましょう！）').setRequired(false),
+				)
+				.addStringOption((option) =>
+					option.setName('start_time').setDescription('開始時間（例: 21:00）').setRequired(false),
+				),
 		)
-		.addStringOption((option) =>
-			option.setName('start_time').setDescription('開始時間（例: 21:00）').setRequired(false),
+		.addSubcommand((subcommand) =>
+			subcommand
+				.setName('anonymous')
+				.setDescription('匿名募集を作成（参加者名を非表示にし、人数のみ表示）')
+				.addStringOption((option) =>
+					option.setName('description').setDescription('募集要項（例: ワイワイやりましょう！）').setRequired(false),
+				)
+				.addStringOption((option) =>
+					option.setName('start_time').setDescription('開始時間（例: 21:00）').setRequired(false),
+				),
 		),
 
 	execute: async (interaction) => {
-		const anonymous = interaction.options.getBoolean('anonymous') ?? false
+		const subcommand = interaction.options.getSubcommand()
+		const anonymous = subcommand === 'anonymous'
+		const description = interaction.options.getString('description')
 		const startTime = interaction.options.getString('start_time')
 		const recruitmentId = crypto.randomUUID()
+
+		if (!interaction.guildId) {
+			await interaction.reply({
+				content: 'このコマンドはサーバー内でのみ使用できます。',
+				flags: MessageFlags.Ephemeral,
+			})
+			return
+		}
+
+		const guildId = interaction.guildId
 
 		// 匿名モードの場合はchannel.sendで送信（コマンド実行者が表示されない）
 		if (anonymous) {
@@ -169,7 +210,7 @@ export default {
 				return
 			}
 
-			const embed = createEmbed(true, [], CAPACITY, interaction.user.id, startTime)
+			const embed = createEmbed(true, [], CAPACITY, interaction.user.id, startTime, description)
 			const disabledButtons = createButtons(recruitmentId, true)
 
 			const message = await interaction.channel.send({
@@ -181,7 +222,7 @@ export default {
 				const response = await apiClient.recruit.$post({
 					json: {
 						id: recruitmentId,
-						guildId: interaction.guildId!,
+						guildId,
 						channelId: interaction.channelId,
 						messageId: message.id,
 						creatorId: interaction.user.id,
@@ -211,7 +252,7 @@ export default {
 			}
 		} else {
 			// 通常モード（従来通り）
-			const embed = createEmbed(false, [], CAPACITY, interaction.user.id, startTime)
+			const embed = createEmbed(false, [], CAPACITY, interaction.user.id, startTime, description)
 			const disabledButtons = createButtons(recruitmentId, true)
 
 			await interaction.reply({
@@ -225,7 +266,7 @@ export default {
 				const response = await apiClient.recruit.$post({
 					json: {
 						id: recruitmentId,
-						guildId: interaction.guildId!,
+						guildId,
 						channelId: interaction.channelId,
 						messageId: reply.id,
 						creatorId: interaction.user.id,
@@ -270,6 +311,10 @@ export default {
 			})
 			return
 		}
+
+		// 既存のEmbedからdescriptionを取得して維持
+		const existingEmbed = interaction.message.embeds[0]
+		const existingDescription = existingEmbed?.description ?? null
 
 		try {
 			if (action === 'join') {
@@ -334,6 +379,7 @@ export default {
 						data.participants,
 						recruitData.recruitment.creatorId,
 						recruitData.recruitment.startTime,
+						existingDescription,
 					)
 					await interaction.update({
 						embeds: [fullEmbed],
@@ -351,6 +397,7 @@ export default {
 						CAPACITY,
 						recruitData.recruitment.creatorId,
 						recruitData.recruitment.startTime,
+						existingDescription,
 					)
 					const buttons = createButtons(recruitmentId, false)
 
@@ -413,6 +460,7 @@ export default {
 					CAPACITY,
 					recruitData.recruitment.creatorId,
 					recruitData.recruitment.startTime,
+					existingDescription,
 				)
 				const buttons = createButtons(recruitmentId, false)
 
@@ -486,6 +534,7 @@ export default {
 					CAPACITY,
 					recruitData.recruitment.creatorId,
 					recruitData.recruitment.startTime,
+					existingDescription,
 				)
 
 				await interaction.update({
