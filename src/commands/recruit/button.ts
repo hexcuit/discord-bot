@@ -419,22 +419,101 @@ const handleClose = async (
 }
 
 const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruitmentId: string) => {
-	// ランク戦参加 - ロール選択画面を表示
+	// まず参加処理を行う（ロール選択前に参加させることで、update-roleが機能する）
+	const joinResponse = await apiClient.recruit.join.$post({
+		json: {
+			recruitmentId,
+			discordId: interaction.user.id,
+		},
+	})
+
+	if (!joinResponse.ok) {
+		const error = (await joinResponse.json()) as { error?: string }
+		const message =
+			error.error === 'Already joined'
+				? '既に参加しています。'
+				: error.error === 'Recruitment is full'
+					? '定員に達しています。'
+					: error.error === 'Recruitment is not open'
+						? '募集は終了しています。'
+						: '参加に失敗しました。'
+
+		await interaction.reply({
+			content: message,
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	const joinData = (await joinResponse.json()) as {
+		success: boolean
+		isFull: boolean
+		count: number
+		participants: Participant[]
+	}
+
+	// 募集情報取得
+	const recruitResponse = await apiClient.recruit[':id'].$get({
+		param: { id: recruitmentId },
+	})
+
+	if (!recruitResponse.ok) {
+		await interaction.reply({
+			content: '参加しましたが、募集情報の取得に失敗しました。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	const recruitData = (await recruitResponse.json()) as {
+		recruitment: {
+			creatorId: string
+			startTime: string | null
+		}
+	}
+
+	// 元のメッセージを更新
+	const existingDescription = interaction.message.embeds[0]?.description ?? null
+	const embed = createRankedEmbed(
+		joinData.participants,
+		CAPACITY,
+		recruitData.recruitment.creatorId,
+		recruitData.recruitment.startTime,
+		existingDescription,
+	)
+
+	// 10人揃った場合は別処理
+	if (joinData.isFull && interaction.guildId) {
+		await interaction.update({
+			embeds: [embed],
+			components: [],
+		})
+
+		// チーム分け＆試合作成
+		await startRankedMatchFromFull(interaction, recruitmentId, joinData.participants)
+		return
+	}
+
+	const buttons = createRankedButtons(recruitmentId, false)
+	await interaction.update({
+		embeds: [embed],
+		components: [buttons],
+	})
+
+	// ロール選択UIを表示
 	const mainRoleSelect = createRoleSelectMenu(recruitmentId, 'main')
 	const subRoleSelect = createRoleSelectMenu(recruitmentId, 'sub')
-
-	// 元のメッセージIDをcustomIdに含める（recruit:confirm_rank_join:recruitmentId:originalMessageId）
 	const originalMessageId = interaction.message.id
 
-	await interaction.reply({
-		content: 'ロールを選択してください。\nメインロールとサブロールを選んだ後、「参加確定」ボタンを押してください。',
+	await interaction.followUp({
+		content: '参加しました！ロールを選択してください。\n選択後、「完了」ボタンを押してください。',
 		components: [
 			mainRoleSelect,
 			subRoleSelect,
 			new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
 					.setCustomId(`recruit:confirm_rank_join:${recruitmentId}:${originalMessageId}`)
-					.setLabel('参加確定')
+					.setLabel('完了')
 					.setStyle(ButtonStyle.Success),
 			),
 		],
@@ -456,47 +535,14 @@ const handleConfirmRankJoin = async (
 		return
 	}
 
-	// ランク戦参加確定（ロール選択後）
-	const response = await apiClient.recruit.join.$post({
-		json: {
-			recruitmentId,
-			discordId: interaction.user.id,
-		},
-	})
-
-	if (!response.ok) {
-		const error = (await response.json()) as { error?: string }
-		const message =
-			error.error === 'Already joined'
-				? '既に参加しています。'
-				: error.error === 'Recruitment is full'
-					? '定員に達しています。'
-					: error.error === 'Recruitment is not open'
-						? '募集は終了しています。'
-						: '参加に失敗しました。'
-
-		await interaction.update({
-			content: message,
-			components: [],
-		})
-		return
-	}
-
-	const data = (await response.json()) as {
-		success: boolean
-		isFull: boolean
-		count: number
-		participants: Participant[]
-	}
-
-	// 募集情報取得
+	// 募集情報を取得（ロール選択後の最新状態）
 	const recruitResponse = await apiClient.recruit[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
 	if (!recruitResponse.ok) {
 		await interaction.update({
-			content: '参加しましたが、募集情報の更新に失敗しました。',
+			content: 'ロールを設定しました。',
 			components: [],
 		})
 		return
@@ -507,10 +553,11 @@ const handleConfirmRankJoin = async (
 			creatorId: string
 			startTime: string | null
 		}
+		participants: Participant[]
 	}
 
 	await interaction.update({
-		content: '参加しました！',
+		content: 'ロールを設定しました。',
 		components: [],
 	})
 
@@ -525,7 +572,7 @@ const handleConfirmRankJoin = async (
 	const existingDescription = originalMessage.embeds[0]?.description ?? null
 
 	const embed = createRankedEmbed(
-		data.participants,
+		recruitData.participants,
 		CAPACITY,
 		recruitData.recruitment.creatorId,
 		recruitData.recruitment.startTime,
@@ -537,72 +584,78 @@ const handleConfirmRankJoin = async (
 		embeds: [embed],
 		components: [buttons],
 	})
+}
 
-	// 10人揃ったら自動でチーム分け＆試合作成
-	if (data.isFull && interaction.guildId) {
-		// 募集終了
-		await apiClient.recruit[':id'].$delete({
-			param: { id: recruitmentId },
-		})
+// 10人揃った時のチーム分け＆試合作成
+const startRankedMatchFromFull = async (
+	interaction: ButtonInteraction<CacheType>,
+	recruitmentId: string,
+	participants: Participant[],
+) => {
+	if (!interaction.guildId) return
 
-		// チーム分け＆試合作成（別メッセージで）
-		const matchId = crypto.randomUUID()
+	// 募集終了
+	await apiClient.recruit[':id'].$delete({
+		param: { id: recruitmentId },
+	})
 
-		// レーティング取得
-		const discordIds = data.participants.map((p) => p.discordId)
-		const ratingsResponse = await apiClient.guild.rating.$get({
-			query: { guildId: interaction.guildId, discordIds },
-		})
+	// チーム分け＆試合作成
+	const matchId = crypto.randomUUID()
 
-		type RatingResponse = {
-			ratings: Array<{
-				discordId: string
-				rating: number | null
-			}>
+	// レーティング取得
+	const discordIds = participants.map((p) => p.discordId)
+	const ratingsResponse = await apiClient.guild.rating.$get({
+		query: { guildId: interaction.guildId, discordIds },
+	})
+
+	type RatingResponse = {
+		ratings: Array<{
+			discordId: string
+			rating: number | null
+		}>
+	}
+
+	let ratings: RatingResponse['ratings'] = []
+	if (ratingsResponse.ok) {
+		const ratingsData = (await ratingsResponse.json()) as RatingResponse
+		ratings = ratingsData.ratings
+	}
+
+	// レーティングを参加者にマッピング
+	const participantsWithRating = participants.map((p) => {
+		const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
+		return {
+			discordId: p.discordId,
+			mainRole: p.mainRole as LolRole | null,
+			subRole: p.subRole as LolRole | null,
+			rating: ratingInfo?.rating ?? INITIAL_RATING,
 		}
+	})
 
-		let ratings: RatingResponse['ratings'] = []
-		if (ratingsResponse.ok) {
-			const ratingsData = (await ratingsResponse.json()) as RatingResponse
-			ratings = ratingsData.ratings
-		}
+	// チームバランス
+	const teamAssignments = balanceTeamsByElo(participantsWithRating)
 
-		// レーティングを参加者にマッピング
-		const participantsWithRating = data.participants.map((p) => {
-			const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
-			return {
-				discordId: p.discordId,
-				mainRole: p.mainRole as LolRole | null,
-				subRole: p.subRole as LolRole | null,
-				rating: ratingInfo?.rating ?? INITIAL_RATING,
-			}
+	// 試合作成API呼び出し
+	const matchResponse = await apiClient.guild.match.$post({
+		json: {
+			id: matchId,
+			guildId: interaction.guildId,
+			channelId: interaction.channelId,
+			messageId: interaction.message.id,
+			teamAssignments,
+		},
+	})
+
+	if (matchResponse.ok) {
+		const matchEmbed = createMatchEmbed(teamAssignments, 0, 0, 6)
+		const voteButtons = createVoteButtons(matchId)
+
+		const mentions = participants.map((p) => `<@${p.discordId}>`).join(' ')
+		await interaction.followUp({
+			content: `🏆 ランク戦募集完了！チーム分けが完了しました！ ${mentions}\n\n試合終了後、勝利チームを投票してください。`,
+			embeds: [matchEmbed],
+			components: [voteButtons],
 		})
-
-		// チームバランス
-		const teamAssignments = balanceTeamsByElo(participantsWithRating)
-
-		// 試合作成API呼び出し
-		const matchResponse = await apiClient.guild.match.$post({
-			json: {
-				id: matchId,
-				guildId: interaction.guildId,
-				channelId: interaction.channelId,
-				messageId: originalMessageId,
-				teamAssignments,
-			},
-		})
-
-		if (matchResponse.ok) {
-			const matchEmbed = createMatchEmbed(teamAssignments, 0, 0, 6)
-			const voteButtons = createVoteButtons(matchId)
-
-			const mentions = data.participants.map((p) => `<@${p.discordId}>`).join(' ')
-			await interaction.followUp({
-				content: `🏆 ランク戦募集完了！チーム分けが完了しました！ ${mentions}\n\n試合終了後、勝利チームを投票してください。`,
-				embeds: [matchEmbed],
-				components: [voteButtons],
-			})
-		}
 	}
 }
 
