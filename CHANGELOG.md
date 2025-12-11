@@ -1,5 +1,15 @@
 # @hexcuit/discord-bot
 
+## 0.8.2
+
+### Patch Changes
+
+- [#47](https://github.com/hexcuit/discord-bot/pull/47) [`94fd8e1`](https://github.com/hexcuit/discord-bot/commit/94fd8e1894196b3b890a278df6951a9b1de82610) Thanks [@11gather11](https://github.com/11gather11)! - ランク戦参加フローを改善: ロール選択前に参加処理を実行するよう変更
+
+  - 参加ボタン押下時に即座に参加処理を行うよう変更
+  - ロール選択後の「参加確定」ボタンを「完了」ボタンに変更
+  - これにより参加後の`update-role`コマンドが正しく機能するようになる
+
 ## 0.8.1
 
 ### Patch Changes
