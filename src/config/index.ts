@@ -2,6 +2,7 @@ export const colors = {
 	success: 0x6aa84f,
 	error: 0xcc0000,
 	warn: 0xf1c232,
+	primary: 0x5865f2, // Discord Blurple
 
 	blue: 0x0000ff,
 	red: 0xff0000,

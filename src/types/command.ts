@@ -7,6 +7,7 @@ import type {
 	SlashCommandBuilder,
 	SlashCommandOptionsOnlyBuilder,
 	SlashCommandSubcommandsOnlyBuilder,
+	StringSelectMenuInteraction,
 } from 'discord.js'
 
 export interface Command {
@@ -15,4 +16,5 @@ export interface Command {
 	autocomplete?: (interaction: AutocompleteInteraction<CacheType>) => void | Promise<void>
 	modal?: (interaction: ModalSubmitInteraction<CacheType>) => void | Promise<void>
 	button?: (interaction: ButtonInteraction<CacheType>) => void | Promise<void>
+	selectMenu?: (interaction: StringSelectMenuInteraction<CacheType>) => void | Promise<void>
 }

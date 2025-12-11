@@ -4,6 +4,7 @@ import { handleAutocomplete } from './autocomplete'
 import { handleButton } from './button'
 import { handleChatInputCommand } from './chatInput-command'
 import { handleModalSubmit } from './modalSubmit'
+import { handleSelectMenu } from './selectMenu'
 
 export default {
 	name: Events.InteractionCreate,
@@ -18,6 +19,8 @@ export default {
 			handleAutocomplete(interaction)
 		} else if (interaction.isModalSubmit()) {
 			handleModalSubmit(interaction)
+		} else if (interaction.isStringSelectMenu()) {
+			handleSelectMenu(interaction)
 		}
 	},
 } satisfies Event<Events.InteractionCreate>
