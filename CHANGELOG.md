@@ -1,5 +1,14 @@
 # @hexcuit/discord-bot
 
+## 0.8.3
+
+### Patch Changes
+
+- [#49](https://github.com/hexcuit/discord-bot/pull/49) [`5139927`](https://github.com/hexcuit/discord-bot/commit/513992787d488b95032e34a18303be2372c11f9e) Thanks [@11gather11](https://github.com/11gather11)! - ランク戦の改善:
+  - 強制開始権限を主催者から管理者に変更
+  - 投票確定条件を固定 6 票からサーバー側の過半数判定に変更
+  - @hexcuit/server を 0.8.2 にアップデート
+
 ## 0.8.2
 
 ### Patch Changes
