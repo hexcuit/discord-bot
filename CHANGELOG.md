@@ -1,5 +1,13 @@
 # @hexcuit/discord-bot
 
+## 0.7.1
+
+### Patch Changes
+
+- [#38](https://github.com/hexcuit/discord-bot/pull/38) [`41159f2`](https://github.com/hexcuit/discord-bot/commit/41159f2e24c1ba97c553919147cae8603322afff) Thanks [@11gather11](https://github.com/11gather11)! - API パスを `/rank` から `/lol/rank` に更新
+
+  @hexcuit/server の構造変更に対応。
+
 ## 0.7.0
 
 ### Minor Changes
