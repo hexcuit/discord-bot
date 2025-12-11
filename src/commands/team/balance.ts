@@ -74,11 +74,11 @@ const fetchRankData = async (
 	discordIds: string[],
 ): Promise<{ success: boolean; ranks?: RankInfo[]; error?: string }> => {
 	try {
-		if (!apiClient.rank?.$get) {
+		if (!apiClient.lol.rank?.$get) {
 			throw new Error('API client rank endpoint not available')
 		}
 
-		const response = await apiClient.rank.$get({
+		const response = await apiClient.lol.rank.$get({
 			query: { discordIds },
 		})
 
