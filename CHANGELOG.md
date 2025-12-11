@@ -1,5 +1,35 @@
 # @hexcuit/discord-bot
 
+## 0.8.0
+
+### Minor Changes
+
+- [#42](https://github.com/hexcuit/discord-bot/pull/42) [`fc5dab9`](https://github.com/hexcuit/discord-bot/commit/fc5dab9db98d01ec4d56e00656ce19cc810d8d22) Thanks [@11gather11](https://github.com/11gather11)! - Phase 3: ランク戦チーム分け・勝敗投票・/rank server コマンド追加
+
+  - ランク戦募集完了時の自動チーム分け（Elo バランス）
+  - 勝敗投票 UI（Blue/Red 投票ボタン）
+  - 6 票以上で試合確定・レート更新
+  - `/rank server [@user]` - サーバー内ランク表示
+  - `/rank leaderboard [limit]` - サーバーランキング表示
+
+- [#44](https://github.com/hexcuit/discord-bot/pull/44) [`149371a`](https://github.com/hexcuit/discord-bot/commit/149371ac1a2f1fb488ca5718344914b8aa6882ad) Thanks [@11gather11](https://github.com/11gather11)! - Phase 4: 統計カード画像生成機能
+
+  - `/rank server` コマンドで統計カード画像を生成して表示
+  - Satori + Resvg による PNG 画像生成
+  - 表示内容: ランク、レート、勝敗、勝率、直近 5 試合の結果
+
+- [#40](https://github.com/hexcuit/discord-bot/pull/40) [`a65da60`](https://github.com/hexcuit/discord-bot/commit/a65da60462ca03872073bc0958458cf7e12e5cba) Thanks [@11gather11](https://github.com/11gather11)! - /recruit rank サブコマンドを追加（ロール選択付きランク戦募集）
+
+  - recruit コマンドをファイル分割して保守性を向上
+    - index.ts: コマンド定義とルーティング
+    - shared.ts: 共通定数・型・Embed/ボタン作成関数
+    - create.ts: /recruit create 実装
+    - anonymous.ts: /recruit anonymous 実装
+    - rank.ts: /recruit rank 実装
+    - button.ts: ボタンハンドラー
+    - selectMenu.ts: セレクトメニューハンドラー
+  - @hexcuit/server v0.6.0 に更新
+
 ## 0.7.1
 
 ### Patch Changes
