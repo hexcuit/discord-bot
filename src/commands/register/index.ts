@@ -55,7 +55,7 @@ export default {
 			// APIリクエスト
 
 			//元のランクを取得
-			const resGet = await apiClient.rank.$get({
+			const resGet = await apiClient.lol.rank.$get({
 				query: { discordIds: interaction.user.id },
 			})
 
@@ -78,7 +78,7 @@ export default {
 			}
 
 			// 新しいランクを登録
-			const res = await apiClient.rank.$post({
+			const res = await apiClient.lol.rank.$post({
 				json: {
 					discordId: interaction.user.id,
 					tier,
