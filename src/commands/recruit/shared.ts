@@ -6,7 +6,7 @@ import {
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
-import { colors, emoji } from '@/config'
+import { colors } from '@/config'
 
 export const CAPACITY = 10
 
