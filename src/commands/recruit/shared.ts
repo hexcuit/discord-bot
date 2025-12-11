@@ -6,7 +6,7 @@ import {
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
-import { colors } from '@/config'
+import { colors, emoji } from '@/config'
 
 export const CAPACITY = 10
 
@@ -273,4 +273,209 @@ export const createRoleSelectMenu = (recruitmentId: string, type: 'main' | 'sub'
 			.setPlaceholder(type === 'main' ? 'メインロールを選択' : 'サブロールを選択')
 			.addOptions(options),
 	)
+}
+
+// チーム振り分け用の型
+export type TeamAssignment = {
+	team: 'blue' | 'red'
+	role: LolRole
+	rating: number
+}
+
+export type TeamAssignments = Record<string, TeamAssignment>
+
+export type RatingInfo = {
+	discordId: string
+	rating: number
+	rank: string | null
+	isPlacement: boolean | null
+}
+
+// チーム振り分け結果表示用Embed
+export const createMatchEmbed = (
+	teamAssignments: TeamAssignments,
+	blueVotes: number,
+	redVotes: number,
+	votesRequired: number,
+	status: 'voting' | 'confirmed' | 'cancelled' = 'voting',
+) => {
+	const blueTeam = Object.entries(teamAssignments)
+		.filter(([, a]) => a.team === 'blue')
+		.map(([discordId, a]) => ({ discordId, ...a }))
+	const redTeam = Object.entries(teamAssignments)
+		.filter(([, a]) => a.team === 'red')
+		.map(([discordId, a]) => ({ discordId, ...a }))
+
+	const blueTotal = blueTeam.reduce((sum, p) => sum + p.rating, 0)
+	const redTotal = redTeam.reduce((sum, p) => sum + p.rating, 0)
+
+	const formatTeamMember = (p: { discordId: string; role: LolRole; rating: number }) => {
+		return `${ROLE_EMOJIS[p.role]} <@${p.discordId}> (${p.rating})`
+	}
+
+	const title =
+		status === 'voting'
+			? '🏆 ランク戦 - 勝敗投票'
+			: status === 'confirmed'
+				? '🏆 ランク戦 - 結果確定'
+				: '🏆 ランク戦 - キャンセル'
+
+	const color = status === 'voting' ? colors.primary : status === 'confirmed' ? colors.success : colors.error
+
+	const embed = new EmbedBuilder().setTitle(title).setColor(color)
+
+	embed.addFields(
+		{
+			name: `🔵 Blue Team (${blueTotal})`,
+			value: blueTeam.map(formatTeamMember).join('\n') || 'なし',
+			inline: true,
+		},
+		{
+			name: `🔴 Red Team (${redTotal})`,
+			value: redTeam.map(formatTeamMember).join('\n') || 'なし',
+			inline: true,
+		},
+	)
+
+	if (status === 'voting') {
+		embed.addFields({
+			name: '投票状況',
+			value: `🔵 Blue勝利: ${blueVotes}票 / 🔴 Red勝利: ${redVotes}票\n(${votesRequired}票で確定)`,
+			inline: false,
+		})
+	}
+
+	return embed
+}
+
+// 投票ボタン
+export const createVoteButtons = (matchId: string, disabled = false) => {
+	return new ActionRowBuilder<ButtonBuilder>().addComponents(
+		new ButtonBuilder()
+			.setCustomId(`recruit:vote_blue:${matchId}`)
+			.setLabel('🔵 Blue勝利')
+			.setStyle(ButtonStyle.Primary)
+			.setDisabled(disabled),
+		new ButtonBuilder()
+			.setCustomId(`recruit:vote_red:${matchId}`)
+			.setLabel('🔴 Red勝利')
+			.setStyle(ButtonStyle.Danger)
+			.setDisabled(disabled),
+		new ButtonBuilder()
+			.setCustomId(`recruit:vote_cancel:${matchId}`)
+			.setLabel('キャンセル')
+			.setStyle(ButtonStyle.Secondary)
+			.setDisabled(disabled),
+	)
+}
+
+// 結果確定後のEmbed
+export const createMatchResultEmbed = (
+	winningTeam: 'blue' | 'red',
+	ratingChanges: Array<{
+		discordId: string
+		team: 'blue' | 'red'
+		ratingBefore: number
+		ratingAfter: number
+		change: number
+		rank: string
+	}>,
+) => {
+	const blueChanges = ratingChanges.filter((r) => r.team === 'blue')
+	const redChanges = ratingChanges.filter((r) => r.team === 'red')
+
+	const formatChange = (r: (typeof ratingChanges)[0]) => {
+		const changeStr = r.change >= 0 ? `+${r.change}` : `${r.change}`
+		const winLose = r.team === winningTeam ? '🏆' : ''
+		return `${winLose} <@${r.discordId}>: ${r.ratingBefore} → ${r.ratingAfter} (${changeStr})`
+	}
+
+	const embed = new EmbedBuilder()
+		.setTitle(`🏆 試合結果 - ${winningTeam === 'blue' ? '🔵 Blue' : '🔴 Red'} チーム勝利！`)
+		.setColor(winningTeam === 'blue' ? colors.blue : colors.red)
+		.addFields(
+			{
+				name: '🔵 Blue Team',
+				value: blueChanges.map(formatChange).join('\n') || 'なし',
+				inline: true,
+			},
+			{
+				name: '🔴 Red Team',
+				value: redChanges.map(formatChange).join('\n') || 'なし',
+				inline: true,
+			},
+		)
+
+	return embed
+}
+
+// Eloに基づくチームバランス関数
+export const balanceTeamsByElo = (
+	participants: Array<{ discordId: string; mainRole?: LolRole | null; subRole?: LolRole | null; rating: number }>,
+): TeamAssignments => {
+	// レーティング順でソート
+	const sorted = [...participants].sort((a, b) => b.rating - a.rating)
+
+	// スネークドラフト方式で分配
+	const blueTeam: typeof sorted = []
+	const redTeam: typeof sorted = []
+
+	sorted.forEach((p, i) => {
+		// 0,3,4,7,8 → Blue, 1,2,5,6,9 → Red (スネーク)
+		const round = Math.floor(i / 2)
+		const isBlue = round % 2 === 0 ? i % 2 === 0 : i % 2 !== 0
+		if (isBlue) {
+			blueTeam.push(p)
+		} else {
+			redTeam.push(p)
+		}
+	})
+
+	// ロールを割り当て
+	const assignRoles = (team: typeof sorted): Array<{ discordId: string; role: LolRole; rating: number }> => {
+		const assigned: Array<{ discordId: string; role: LolRole; rating: number }> = []
+		const usedRoles = new Set<LolRole>()
+
+		// まずメインロールで割り当て
+		for (const p of team) {
+			if (p.mainRole && !usedRoles.has(p.mainRole)) {
+				assigned.push({ discordId: p.discordId, role: p.mainRole, rating: p.rating })
+				usedRoles.add(p.mainRole)
+			}
+		}
+
+		// サブロールで割り当て
+		for (const p of team) {
+			if (!assigned.find((a) => a.discordId === p.discordId)) {
+				if (p.subRole && !usedRoles.has(p.subRole)) {
+					assigned.push({ discordId: p.discordId, role: p.subRole, rating: p.rating })
+					usedRoles.add(p.subRole)
+				}
+			}
+		}
+
+		// 残りは空いているロールを割り当て
+		const remainingRoles = LOL_ROLES.filter((r) => !usedRoles.has(r))
+		for (const p of team) {
+			if (!assigned.find((a) => a.discordId === p.discordId)) {
+				const role = remainingRoles.shift() || 'mid'
+				assigned.push({ discordId: p.discordId, role, rating: p.rating })
+			}
+		}
+
+		return assigned
+	}
+
+	const blueAssigned = assignRoles(blueTeam)
+	const redAssigned = assignRoles(redTeam)
+
+	const result: TeamAssignments = {}
+	for (const p of blueAssigned) {
+		result[p.discordId] = { team: 'blue', role: p.role, rating: p.rating }
+	}
+	for (const p of redAssigned) {
+		result[p.discordId] = { team: 'red', role: p.role, rating: p.rating }
+	}
+
+	return result
 }
