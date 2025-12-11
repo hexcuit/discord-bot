@@ -1,6 +1,5 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } from 'discord.js'
-import { colors } from '@/config'
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import {
@@ -16,7 +15,6 @@ import {
 	createRankedEmbed,
 	createRoleSelectMenu,
 	createVoteButtons,
-	formatRole,
 	type LolRole,
 	type Participant,
 	parseCustomId,
