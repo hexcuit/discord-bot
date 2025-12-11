@@ -1,8 +1,9 @@
-import { EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js'
+import { AttachmentBuilder, EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js'
 import { colors } from '@/config'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
+import { generateStatsCard, type MatchHistoryItem } from '@/utils/stats-card'
 
 export default {
 	command: new SlashCommandBuilder()
@@ -113,35 +114,44 @@ const executeServer = async (interaction: Parameters<Command['execute']>[0]) => 
 			position = userRanking?.position ?? null
 		}
 
+		// 試合履歴を取得
+		let matchHistory: MatchHistoryItem[] = []
+		try {
+			const historyResponse = await apiClient.guild['match-history'].$get({
+				query: { guildId, discordId: targetUser.id, limit: '5' },
+			})
+			if (historyResponse.ok) {
+				const historyData = (await historyResponse.json()) as {
+					history: Array<{ won: boolean; change: number }>
+				}
+				matchHistory = historyData.history.map((h) => ({ won: h.won, change: h.change }))
+			}
+		} catch {
+			// 履歴取得失敗は無視（空配列のまま）
+		}
+
 		const wins = rating.wins ?? 0
 		const losses = rating.losses ?? 0
 		const totalGames = wins + losses
 		const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0
 
-		const embed = new EmbedBuilder()
-			.setTitle(`🏆 ${targetUser.displayName} のサーバーランク`)
-			.setThumbnail(targetUser.displayAvatarURL())
-			.setColor(colors.primary)
+		// 統計カード画像を生成
+		const statsCardBuffer = await generateStatsCard({
+			displayName: targetUser.displayName,
+			avatarUrl: targetUser.displayAvatarURL({ extension: 'png', size: 128 }),
+			rank: rating.rank ?? 'Unranked',
+			rating: rating.rating,
+			wins,
+			losses,
+			winRate,
+			position,
+			isPlacement: rating.isPlacement ?? false,
+			placementGames: rating.placementGames ?? 0,
+			matchHistory,
+		})
 
-		if (rating.isPlacement) {
-			const placementGames = rating.placementGames ?? 0
-			embed.setDescription(`プレイスメント中: ${placementGames}/5 試合`)
-			embed.addFields(
-				{ name: 'レート', value: `${rating.rating}`, inline: true },
-				{ name: '戦績', value: `${wins}勝 ${losses}敗`, inline: true },
-				{ name: '勝率', value: `${winRate}%`, inline: true },
-			)
-		} else {
-			embed.addFields(
-				{ name: 'ランク', value: rating.rank ?? 'Unknown', inline: true },
-				{ name: 'レート', value: `${rating.rating}`, inline: true },
-				{ name: '順位', value: position ? `#${position}` : '-', inline: true },
-				{ name: '戦績', value: `${wins}勝 ${losses}敗`, inline: true },
-				{ name: '勝率', value: `${winRate}%`, inline: true },
-			)
-		}
-
-		await interaction.editReply({ embeds: [embed] })
+		const attachment = new AttachmentBuilder(statsCardBuffer, { name: 'stats.png' })
+		await interaction.editReply({ files: [attachment] })
 	} catch (error) {
 		logger.error('ランク取得エラー:', error)
 		await interaction.editReply({
