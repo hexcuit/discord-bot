@@ -1,5 +1,5 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js'
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import {
@@ -753,10 +753,10 @@ const handleRankForce = async (
 		participants: Participant[]
 	}
 
-	// 主催者チェック
-	if (recruitData.recruitment.creatorId !== interaction.user.id) {
+	// 管理者権限チェック（ランク戦は管理者のみ強制開始可能）
+	if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
 		await interaction.reply({
-			content: '強制開始できるのは主催者のみです。',
+			content: '強制開始できるのはサーバー管理者のみです。',
 			flags: MessageFlags.Ephemeral,
 		})
 		return
@@ -905,11 +905,12 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 		success: boolean
 		blueVotes: number
 		redVotes: number
+		totalParticipants: number
+		votesRequired: number
 	}
 
-	// 6票以上で確定チェック
-	const VOTES_REQUIRED = 6
-	if (data.blueVotes >= VOTES_REQUIRED || data.redVotes >= VOTES_REQUIRED) {
+	// 過半数で確定チェック
+	if (data.blueVotes >= data.votesRequired || data.redVotes >= data.votesRequired) {
 		// 試合確定
 		const confirmResponse = await apiClient.guild.match[':id'].confirm.$post({
 			param: { id: matchId },
