@@ -1,5 +1,11 @@
 # @hexcuit/discord-bot
 
+## 0.8.1
+
+### Patch Changes
+
+- [#45](https://github.com/hexcuit/discord-bot/pull/45) [`3a51041`](https://github.com/hexcuit/discord-bot/commit/3a5104168ba22e480043b5828c10506e32622e7c) Thanks [@11gather11](https://github.com/11gather11)! - rank-join-message-update
+
 ## 0.8.0
 
 ### Minor Changes
