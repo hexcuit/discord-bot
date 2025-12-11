@@ -25,7 +25,7 @@ import {
 const INITIAL_RATING = 1500
 
 export const handleButton = async (interaction: ButtonInteraction<CacheType>) => {
-	const { action, recruitmentId } = parseCustomId(interaction.customId)
+	const { action, recruitmentId, originalMessageId } = parseCustomId(interaction.customId)
 
 	if (!recruitmentId) {
 		await interaction.reply({
@@ -57,7 +57,7 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 				await handleRankJoin(interaction, recruitmentId)
 				break
 			case 'confirm_rank_join':
-				await handleConfirmRankJoin(interaction, recruitmentId, existingDescription)
+				await handleConfirmRankJoin(interaction, recruitmentId, originalMessageId)
 				break
 			case 'rank_leave':
 				await handleRankLeave(interaction, recruitmentId, existingDescription)
@@ -423,6 +423,9 @@ const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruit
 	const mainRoleSelect = createRoleSelectMenu(recruitmentId, 'main')
 	const subRoleSelect = createRoleSelectMenu(recruitmentId, 'sub')
 
+	// 元のメッセージIDをcustomIdに含める（recruit:confirm_rank_join:recruitmentId:originalMessageId）
+	const originalMessageId = interaction.message.id
+
 	await interaction.reply({
 		content: 'ロールを選択してください。\nメインロールとサブロールを選んだ後、「参加確定」ボタンを押してください。',
 		components: [
@@ -430,7 +433,7 @@ const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruit
 			subRoleSelect,
 			new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
-					.setCustomId(`recruit:confirm_rank_join:${recruitmentId}`)
+					.setCustomId(`recruit:confirm_rank_join:${recruitmentId}:${originalMessageId}`)
 					.setLabel('参加確定')
 					.setStyle(ButtonStyle.Success),
 			),
@@ -442,8 +445,17 @@ const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruit
 const handleConfirmRankJoin = async (
 	interaction: ButtonInteraction<CacheType>,
 	recruitmentId: string,
-	existingDescription: string | null,
+	originalMessageId: string | undefined,
 ) => {
+	// originalMessageIdがない場合はエラー
+	if (!originalMessageId) {
+		await interaction.update({
+			content: 'エラー: 元のメッセージが見つかりません。',
+			components: [],
+		})
+		return
+	}
+
 	// ランク戦参加確定（ロール選択後）
 	const response = await apiClient.recruit.join.$post({
 		json: {
@@ -502,7 +514,16 @@ const handleConfirmRankJoin = async (
 		components: [],
 	})
 
-	// 元のメッセージを更新
+	// 元のメッセージを取得して更新
+	const channel = interaction.channel
+	if (!channel) {
+		logger.error('チャンネルが見つかりません')
+		return
+	}
+
+	const originalMessage = await channel.messages.fetch(originalMessageId)
+	const existingDescription = originalMessage.embeds[0]?.description ?? null
+
 	const embed = createRankedEmbed(
 		data.participants,
 		CAPACITY,
@@ -512,7 +533,7 @@ const handleConfirmRankJoin = async (
 	)
 	const buttons = createRankedButtons(recruitmentId, false)
 
-	await interaction.message.edit({
+	await originalMessage.edit({
 		embeds: [embed],
 		components: [buttons],
 	})
@@ -566,7 +587,7 @@ const handleConfirmRankJoin = async (
 				id: matchId,
 				guildId: interaction.guildId,
 				channelId: interaction.channelId,
-				messageId: interaction.message.id,
+				messageId: originalMessageId,
 				teamAssignments,
 			},
 		})

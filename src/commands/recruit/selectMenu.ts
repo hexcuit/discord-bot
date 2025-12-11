@@ -1,7 +1,7 @@
 import { type CacheType, MessageFlags, type StringSelectMenuInteraction } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { type LolRole, parseCustomId, ROLE_EMOJIS, ROLE_LABELS } from './shared'
+import { type LolRole, parseCustomId } from './shared'
 
 export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<CacheType>) => {
 	const { action, recruitmentId } = parseCustomId(interaction.customId)
@@ -25,14 +25,8 @@ export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<
 				},
 			})
 
-			// まだ参加していない場合はエラーにならないように、選択を確認するだけ
-			const roleLabel = ROLE_LABELS[selectedValue]
-			const emoji = ROLE_EMOJIS[selectedValue]
-
-			await interaction.reply({
-				content: `${emoji} ${roleType === 'main' ? 'メインロール' : 'サブロール'}を **${roleLabel}** に設定しました。`,
-				flags: MessageFlags.Ephemeral,
-			})
+			// 確認メッセージなしで選択を反映（ドロップダウン自体に選択が表示される）
+			await interaction.deferUpdate()
 		}
 	} catch (error) {
 		logger.error('セレクトメニュー処理エラー:', error)
