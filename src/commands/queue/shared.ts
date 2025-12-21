@@ -6,27 +6,17 @@ import {
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
-import { colors } from '@/config'
+import { COLORS, ROLE_EMOJI } from '@/config'
+import { LOL_ROLES, type LolRole } from '@/constants'
 
 export const CAPACITY = 10
 
-export const LOL_ROLES = ['top', 'jungle', 'mid', 'adc', 'support'] as const
-export type LolRole = (typeof LOL_ROLES)[number]
-
 export const ROLE_LABELS: Record<LolRole, string> = {
-	top: 'トップ',
-	jungle: 'ジャングル',
-	mid: 'ミッド',
-	adc: 'ADC',
-	support: 'サポート',
-}
-
-export const ROLE_EMOJIS: Record<LolRole, string> = {
-	top: '🛡️',
-	jungle: '🌲',
-	mid: '⚡',
-	adc: '🏹',
-	support: '💚',
+	TOP: 'トップ',
+	JUNGLE: 'ジャングル',
+	MIDDLE: 'ミッド',
+	BOTTOM: 'ボット',
+	SUPPORT: 'サポート',
 }
 
 export type Participant = {
@@ -47,7 +37,7 @@ export const parseCustomId = (customId: string) => {
 
 export const formatRole = (role: LolRole | null | undefined): string => {
 	if (!role) return '-'
-	return `${ROLE_EMOJIS[role]} ${ROLE_LABELS[role]}`
+	return `${ROLE_EMOJI[role]} ${ROLE_LABELS[role]}`
 }
 
 export const createEmbed = (
@@ -59,7 +49,7 @@ export const createEmbed = (
 	description?: string | null,
 ) => {
 	const title = anonymous ? 'カスタム募集（匿名）' : 'カスタム募集'
-	const embed = new EmbedBuilder().setTitle(title).setColor(colors.success)
+	const embed = new EmbedBuilder().setTitle(title).setColor(COLORS.success)
 
 	if (description) {
 		embed.setDescription(description)
@@ -126,7 +116,7 @@ export const createFullEmbed = (
 	description?: string | null,
 ) => {
 	const fullDescription = description ? `${description}\n\n定員に達しました!` : '定員に達しました!'
-	const embed = new EmbedBuilder().setTitle('募集完了!').setDescription(fullDescription).setColor(colors.success)
+	const embed = new EmbedBuilder().setTitle('募集完了!').setDescription(fullDescription).setColor(COLORS.success)
 
 	if (startTime) {
 		embed.addFields({
@@ -158,7 +148,7 @@ export const createClosedEmbed = (
 ) => {
 	const title = anonymous ? '募集終了（匿名）' : '募集終了'
 	const closedDescription = description ? `${description}\n\nこの募集は終了しました。` : 'この募集は終了しました。'
-	const embed = new EmbedBuilder().setTitle(title).setDescription(closedDescription).setColor(colors.error)
+	const embed = new EmbedBuilder().setTitle(title).setDescription(closedDescription).setColor(COLORS.error)
 
 	if (startTime) {
 		embed.addFields({
@@ -196,7 +186,7 @@ export const createRankedEmbed = (
 	startTime?: string | null,
 	description?: string | null,
 ) => {
-	const embed = new EmbedBuilder().setTitle('🏆 ランク戦募集').setColor(colors.primary)
+	const embed = new EmbedBuilder().setTitle('🏆 ランク戦募集').setColor(COLORS.primary)
 
 	if (description) {
 		embed.setDescription(description)
@@ -264,7 +254,7 @@ export const createRoleSelectMenu = (recruitmentId: string, type: 'main' | 'sub'
 		new StringSelectMenuOptionBuilder()
 			.setLabel(ROLE_LABELS[role])
 			.setValue(role)
-			.setEmoji(ROLE_EMOJIS[role])
+			.setEmoji(ROLE_EMOJI[role])
 			.setDescription(type === 'main' ? 'メインロールとして選択' : 'サブロールとして選択'),
 	)
 
@@ -311,7 +301,7 @@ export const createMatchEmbed = (
 	const redTotal = redTeam.reduce((sum, p) => sum + p.rating, 0)
 
 	const formatTeamMember = (p: { discordId: string; role: LolRole; rating: number }) => {
-		return `${ROLE_EMOJIS[p.role]} <@${p.discordId}> (${p.rating})`
+		return `${ROLE_EMOJI[p.role]} <@${p.discordId}> (${p.rating})`
 	}
 
 	const title =
@@ -321,7 +311,7 @@ export const createMatchEmbed = (
 				? '🏆 ランク戦 - 結果確定'
 				: '🏆 ランク戦 - キャンセル'
 
-	const color = status === 'voting' ? colors.primary : status === 'confirmed' ? colors.success : colors.error
+	const color = status === 'voting' ? COLORS.primary : status === 'confirmed' ? COLORS.success : COLORS.error
 
 	const embed = new EmbedBuilder().setTitle(title).setColor(color)
 
@@ -393,7 +383,7 @@ export const createMatchResultEmbed = (
 
 	const embed = new EmbedBuilder()
 		.setTitle(`🏆 試合結果 - ${winningTeam === 'blue' ? '🔵 Blue' : '🔴 Red'} チーム勝利！`)
-		.setColor(winningTeam === 'blue' ? colors.blue : colors.red)
+		.setColor(winningTeam === 'blue' ? COLORS.blue : COLORS.red)
 		.addFields(
 			{
 				name: '🔵 Blue Team',
@@ -459,7 +449,7 @@ export const balanceTeamsByElo = (
 		const remainingRoles = LOL_ROLES.filter((r) => !usedRoles.has(r))
 		for (const p of team) {
 			if (!assigned.find((a) => a.discordId === p.discordId)) {
-				const role = remainingRoles.shift() || 'mid'
+				const role = remainingRoles.shift() || 'MIDDLE'
 				assigned.push({ discordId: p.discordId, role, rating: p.rating })
 			}
 		}

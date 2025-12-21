@@ -1,6 +1,6 @@
 import { Events } from 'discord.js'
 import { logger } from '@/lib/logger'
-import { updateActivity } from '@/lib/updateActivity'
+import { updateActivity } from '@/lib/update-activity'
 import type { Event } from '@/types/event'
 
 export default {

@@ -8,7 +8,7 @@ import { handleSelectMenu } from './selectMenu'
 
 export default {
 	command: new SlashCommandBuilder()
-		.setName('recruit')
+		.setName('queue')
 		.setDescription('カスタムゲームの募集を作成します（定員10人）')
 		.setContexts(InteractionContextType.Guild)
 		.addSubcommand((subcommand) =>

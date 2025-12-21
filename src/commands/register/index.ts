@@ -1,5 +1,6 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js'
-import { colors, emoji } from '@/config'
+import { COLORS, RANK_EMOJI } from '@/config'
+import type { LolDivision, LolTier } from '@/constants'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
@@ -13,7 +14,6 @@ export default {
 				.setName('tier')
 				.setDescription('ティアを登録します')
 				.addChoices(
-					{ name: 'アンランク', value: 'UNRANKED' },
 					{ name: 'アイアン', value: 'IRON' },
 					{ name: 'ブロンズ', value: 'BRONZE' },
 					{ name: 'シルバー', value: 'SILVER' },
@@ -44,19 +44,19 @@ export default {
 	execute: async (interaction) => {
 		try {
 			// オプションの取得
-			const tier = interaction.options.getString('tier', true)
+			const tier = interaction.options.getString('tier', true) as LolTier
 			// ディビジョンはアンランク,マスター,グランドマスター,チャレンジャーの場合は空文字にする
-			const division = ['UNRANKED', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(tier)
-				? ''
+			const division = ['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(tier)
+				? null
 				: interaction.options.getString('division', true) === 'NONE'
-					? ''
-					: interaction.options.getString('division', true)
+					? null
+					: (interaction.options.getString('division', true) as LolDivision)
 
 			// APIリクエスト
 
 			//元のランクを取得
-			const resGet = await apiClient.lol.rank.$get({
-				query: { discordIds: interaction.user.id },
+			const resGet = await apiClient.v1.ranks.$get({
+				query: { id: interaction.user.id },
 			})
 
 			if (!resGet.ok) {
@@ -78,9 +78,9 @@ export default {
 			}
 
 			// 新しいランクを登録
-			const res = await apiClient.lol.rank.$post({
+			const res = await apiClient.v1.ranks[':discordId'].$put({
+				param: { discordId: interaction.user.id },
 				json: {
-					discordId: interaction.user.id,
 					tier,
 					division,
 				},
@@ -95,12 +95,12 @@ export default {
 				return
 			}
 
-			const oldEmoji = emoji[dataGet.tier as keyof typeof emoji] || ''
-			const newEmoji = emoji[tier as keyof typeof emoji] || ''
+			const oldEmoji = RANK_EMOJI[dataGet.tier as keyof typeof RANK_EMOJI] || ''
+			const newEmoji = RANK_EMOJI[tier as keyof typeof RANK_EMOJI] || ''
 
 			const embedMessage = new EmbedBuilder()
 				.setTitle('ランク登録完了')
-				.setColor(colors.success)
+				.setColor(COLORS.success)
 				.addFields(
 					{
 						name: 'Old Rank',

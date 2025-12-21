@@ -1,5 +1,5 @@
 import { type ChatInputCommandInteraction, EmbedBuilder, type GuildMember } from 'discord.js'
-import { colors, emoji } from '@/config'
+import { COLORS, RANK_EMOJI } from '@/config'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import { getFilteredMembers } from './shared'
@@ -67,19 +67,19 @@ const calculateRankValue = (tier: string, division: string): number => {
 }
 
 const getRankEmoji = (tier: string): string => {
-	return emoji[tier as keyof typeof emoji] || ''
+	return RANK_EMOJI[tier as keyof typeof RANK_EMOJI] || ''
 }
 
 const fetchRankData = async (
 	discordIds: string[],
 ): Promise<{ success: boolean; ranks?: RankInfo[]; error?: string }> => {
 	try {
-		if (!apiClient.lol.rank?.$get) {
+		if (!apiClient.v1.ranks?.$get) {
 			throw new Error('API client rank endpoint not available')
 		}
 
-		const response = await apiClient.lol.rank.$get({
-			query: { discordIds },
+		const response = await apiClient.v1.ranks.$get({
+			query: { id: discordIds },
 		})
 
 		if (!response.ok) {
@@ -184,12 +184,12 @@ function createBalanceTeamEmbeds(
 	const blueTeamEmbed = new EmbedBuilder()
 		.setTitle('Blue Team')
 		.addFields(blueTeam.members.map((member) => formatTeamMemberFieldWithRank(member)))
-		.setColor(colors.blue)
+		.setColor(COLORS.blue)
 
 	const redTeamEmbed = new EmbedBuilder()
 		.setTitle('Red Team')
 		.addFields(redTeam.members.map((member) => formatTeamMemberFieldWithRank(member)))
-		.setColor(colors.red)
+		.setColor(COLORS.red)
 
 	const powerDifference = Math.abs(blueTeam.totalRankPoints - redTeam.totalRankPoints)
 

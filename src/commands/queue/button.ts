@@ -1,5 +1,6 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } from 'discord.js'
+import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import {
@@ -15,7 +16,6 @@ import {
 	createRankedEmbed,
 	createRoleSelectMenu,
 	createVoteButtons,
-	type LolRole,
 	type Participant,
 	parseCustomId,
 	type TeamAssignments,
@@ -89,9 +89,9 @@ const handleJoin = async (
 	recruitmentId: string,
 	existingDescription: string | null,
 ) => {
-	const response = await apiClient.recruit.join.$post({
+	const response = await apiClient.v1.queues[':id'].players.$post({
+		param: { id: recruitmentId },
 		json: {
-			recruitmentId,
 			discordId: interaction.user.id,
 		},
 	})
@@ -114,15 +114,10 @@ const handleJoin = async (
 		return
 	}
 
-	const data = (await response.json()) as {
-		success: boolean
-		isFull: boolean
-		count: number
-		participants: Participant[]
-	}
+	const data = await response.json()
 
 	// 募集情報取得
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -135,22 +130,16 @@ const handleJoin = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
-			anonymous: string
-			creatorId: string
-			startTime: string | null
-		}
-	}
+	const recruitData = await recruitResponse.json()
 
-	const isAnonymous = recruitData.recruitment.anonymous === 'true'
-	const participantIds = data.participants.map((p) => p.discordId)
+	const isAnonymous = recruitData.queue.anonymous
+	const participantIds = recruitData.players.map((p) => p.discordId)
 
 	if (data.isFull) {
 		const fullEmbed = createFullEmbed(
 			participantIds,
-			recruitData.recruitment.creatorId,
-			recruitData.recruitment.startTime,
+			recruitData.queue.creatorId,
+			recruitData.queue.startTime,
 			existingDescription,
 		)
 		await interaction.update({
@@ -158,7 +147,7 @@ const handleJoin = async (
 			components: [],
 		})
 
-		const mentions = participantIds.map((id) => `<@${id}>`).join(' ')
+		const mentions = participantIds.map((id: string) => `<@${id}>`).join(' ')
 		await interaction.followUp({
 			content: `募集完了! ${mentions}`,
 		})
@@ -167,8 +156,8 @@ const handleJoin = async (
 			isAnonymous,
 			participantIds,
 			CAPACITY,
-			recruitData.recruitment.creatorId,
-			recruitData.recruitment.startTime,
+			recruitData.queue.creatorId,
+			recruitData.queue.startTime,
 			existingDescription,
 		)
 		const buttons = createButtons(recruitmentId, false)
@@ -185,16 +174,16 @@ const handleLeave = async (
 	recruitmentId: string,
 	existingDescription: string | null,
 ) => {
-	const response = await apiClient.recruit.leave.$post({
-		json: {
-			recruitmentId,
+	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
+		param: {
+			id: recruitmentId,
 			discordId: interaction.user.id,
 		},
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { error?: string }
-		const message = error.error === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
+		const error = (await response.json()) as { message?: string }
+		const message = error.message === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
@@ -206,10 +195,10 @@ const handleLeave = async (
 	const data = (await response.json()) as {
 		success: boolean
 		count: number
-		participants: Participant[]
+		players: Participant[]
 	}
 
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -223,22 +212,22 @@ const handleLeave = async (
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
-			anonymous: string
+		queue: {
+			anonymous: boolean
 			creatorId: string
 			startTime: string | null
 		}
 	}
 
-	const isAnonymous = recruitData.recruitment.anonymous === 'true'
-	const participantIds = data.participants.map((p) => p.discordId)
+	const isAnonymous = recruitData.queue.anonymous
+	const participantIds = data.players.map((p) => p.discordId)
 
 	const embed = createEmbed(
 		isAnonymous,
 		participantIds,
 		CAPACITY,
-		recruitData.recruitment.creatorId,
-		recruitData.recruitment.startTime,
+		recruitData.queue.creatorId,
+		recruitData.queue.startTime,
 		existingDescription,
 	)
 	const buttons = createButtons(recruitmentId, false)
@@ -255,7 +244,7 @@ const handleForceStart = async (
 	existingDescription: string | null,
 ) => {
 	// 募集情報取得
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -269,17 +258,17 @@ const handleForceStart = async (
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
-			anonymous: string
+		queue: {
+			anonymous: boolean
 			creatorId: string
 			startTime: string | null
 			status: string
 		}
-		participants: { discordId: string }[]
+		players: { discordId: string }[]
 	}
 
 	// 主催者チェック
-	if (recruitData.recruitment.creatorId !== interaction.user.id) {
+	if (recruitData.queue.creatorId !== interaction.user.id) {
 		await interaction.reply({
 			content: '強制開始できるのは主催者のみです。',
 			flags: MessageFlags.Ephemeral,
@@ -288,7 +277,7 @@ const handleForceStart = async (
 	}
 
 	// 既に終了済みチェック
-	if (recruitData.recruitment.status === 'closed') {
+	if (recruitData.queue.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
 			flags: MessageFlags.Ephemeral,
@@ -297,7 +286,7 @@ const handleForceStart = async (
 	}
 
 	// 参加者がいない場合
-	if (recruitData.participants.length === 0) {
+	if (recruitData.players.length === 0) {
 		await interaction.reply({
 			content: '参加者がいないため開始できません。',
 			flags: MessageFlags.Ephemeral,
@@ -306,7 +295,7 @@ const handleForceStart = async (
 	}
 
 	// 募集終了API呼び出し（物理削除）
-	const closeResponse = await apiClient.recruit[':id'].$delete({
+	const closeResponse = await apiClient.v1.queues[':id'].$delete({
 		param: { id: recruitmentId },
 	})
 
@@ -319,12 +308,12 @@ const handleForceStart = async (
 		return
 	}
 
-	const participants = recruitData.participants.map((p) => p.discordId)
+	const participants = recruitData.players.map((p) => p.discordId)
 
 	const fullEmbed = createFullEmbed(
 		participants,
-		recruitData.recruitment.creatorId,
-		recruitData.recruitment.startTime,
+		recruitData.queue.creatorId,
+		recruitData.queue.startTime,
 		existingDescription,
 	)
 
@@ -345,7 +334,7 @@ const handleClose = async (
 	existingDescription: string | null,
 ) => {
 	// 募集情報取得
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -359,17 +348,17 @@ const handleClose = async (
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
-			anonymous: string
+		queue: {
+			anonymous: boolean
 			creatorId: string
 			startTime: string | null
 			status: string
 		}
-		participants: { discordId: string }[]
+		players: { discordId: string }[]
 	}
 
 	// 主催者チェック
-	if (recruitData.recruitment.creatorId !== interaction.user.id) {
+	if (recruitData.queue.creatorId !== interaction.user.id) {
 		await interaction.reply({
 			content: '募集を終了できるのは主催者のみです。',
 			flags: MessageFlags.Ephemeral,
@@ -378,7 +367,7 @@ const handleClose = async (
 	}
 
 	// 既に終了済みチェック
-	if (recruitData.recruitment.status === 'closed') {
+	if (recruitData.queue.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
 			flags: MessageFlags.Ephemeral,
@@ -387,7 +376,7 @@ const handleClose = async (
 	}
 
 	// 募集終了API呼び出し（物理削除）
-	const closeResponse = await apiClient.recruit[':id'].$delete({
+	const closeResponse = await apiClient.v1.queues[':id'].$delete({
 		param: { id: recruitmentId },
 	})
 
@@ -400,15 +389,15 @@ const handleClose = async (
 		return
 	}
 
-	const isAnonymous = recruitData.recruitment.anonymous === 'true'
-	const participants = recruitData.participants.map((p) => p.discordId)
+	const isAnonymous = recruitData.queue.anonymous
+	const participants = recruitData.players.map((p) => p.discordId)
 
 	const closedEmbed = createClosedEmbed(
 		isAnonymous,
 		participants,
 		CAPACITY,
-		recruitData.recruitment.creatorId,
-		recruitData.recruitment.startTime,
+		recruitData.queue.creatorId,
+		recruitData.queue.startTime,
 		existingDescription,
 	)
 
@@ -420,21 +409,21 @@ const handleClose = async (
 
 const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruitmentId: string) => {
 	// まず参加処理を行う（ロール選択前に参加させることで、update-roleが機能する）
-	const joinResponse = await apiClient.recruit.join.$post({
+	const joinResponse = await apiClient.v1.queues[':id'].players.$post({
+		param: { id: recruitmentId },
 		json: {
-			recruitmentId,
 			discordId: interaction.user.id,
 		},
 	})
 
 	if (!joinResponse.ok) {
-		const error = (await joinResponse.json()) as { error?: string }
+		const error = (await joinResponse.json()) as { message?: string }
 		const message =
-			error.error === 'Already joined'
+			error.message === 'Already joined'
 				? '既に参加しています。'
-				: error.error === 'Recruitment is full'
+				: error.message === 'Recruitment is full'
 					? '定員に達しています。'
-					: error.error === 'Recruitment is not open'
+					: error.message === 'Recruitment is not open'
 						? '募集は終了しています。'
 						: '参加に失敗しました。'
 
@@ -446,14 +435,17 @@ const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruit
 	}
 
 	const joinData = (await joinResponse.json()) as {
-		success: boolean
+		player: {
+			discordId: string
+			mainRole: string | null
+			subRole: string | null
+		}
 		isFull: boolean
 		count: number
-		participants: Participant[]
 	}
 
 	// 募集情報取得
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -466,19 +458,20 @@ const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruit
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
+		queue: {
 			creatorId: string
 			startTime: string | null
 		}
+		players: Participant[]
 	}
 
 	// 元のメッセージを更新
 	const existingDescription = interaction.message.embeds[0]?.description ?? null
 	const embed = createRankedEmbed(
-		joinData.participants,
+		recruitData.players,
 		CAPACITY,
-		recruitData.recruitment.creatorId,
-		recruitData.recruitment.startTime,
+		recruitData.queue.creatorId,
+		recruitData.queue.startTime,
 		existingDescription,
 	)
 
@@ -490,7 +483,7 @@ const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruit
 		})
 
 		// チーム分け＆試合作成
-		await startRankedMatchFromFull(interaction, recruitmentId, joinData.participants)
+		await startRankedMatchFromFull(interaction, recruitmentId, recruitData.players)
 		return
 	}
 
@@ -536,7 +529,7 @@ const handleConfirmRankJoin = async (
 	}
 
 	// 募集情報を取得（ロール選択後の最新状態）
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -549,11 +542,11 @@ const handleConfirmRankJoin = async (
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
+		queue: {
 			creatorId: string
 			startTime: string | null
 		}
-		participants: Participant[]
+		players: Participant[]
 	}
 
 	await interaction.update({
@@ -572,10 +565,10 @@ const handleConfirmRankJoin = async (
 	const existingDescription = originalMessage.embeds[0]?.description ?? null
 
 	const embed = createRankedEmbed(
-		recruitData.participants,
+		recruitData.players,
 		CAPACITY,
-		recruitData.recruitment.creatorId,
-		recruitData.recruitment.startTime,
+		recruitData.queue.creatorId,
+		recruitData.queue.startTime,
 		existingDescription,
 	)
 	const buttons = createRankedButtons(recruitmentId, false)
@@ -595,7 +588,7 @@ const startRankedMatchFromFull = async (
 	if (!interaction.guildId) return
 
 	// 募集終了
-	await apiClient.recruit[':id'].$delete({
+	await apiClient.v1.queues[':id'].$delete({
 		param: { id: recruitmentId },
 	})
 
@@ -604,8 +597,9 @@ const startRankedMatchFromFull = async (
 
 	// レーティング取得
 	const discordIds = participants.map((p) => p.discordId)
-	const ratingsResponse = await apiClient.guild.rating.$get({
-		query: { guildId: interaction.guildId, discordIds },
+	const ratingsResponse = await apiClient.v1.guilds[':guildId'].ratings.$get({
+		param: { guildId: interaction.guildId },
+		query: { id: discordIds },
 	})
 
 	type RatingResponse = {
@@ -635,14 +629,26 @@ const startRankedMatchFromFull = async (
 	// チームバランス
 	const teamAssignments = balanceTeamsByElo(participantsWithRating)
 
+	// API用に大文字形式に変換
+	const teamAssignmentsForAPI = Object.fromEntries(
+		Object.entries(teamAssignments).map(([discordId, assignment]) => [
+			discordId,
+			{
+				team: assignment.team.toUpperCase() as 'BLUE' | 'RED',
+				role: assignment.role,
+				rating: assignment.rating,
+			},
+		]),
+	)
+
 	// 試合作成API呼び出し
-	const matchResponse = await apiClient.guild.match.$post({
+	const matchResponse = await apiClient.v1.guilds[':guildId'].matches.$post({
+		param: { guildId: interaction.guildId },
 		json: {
 			id: matchId,
-			guildId: interaction.guildId,
 			channelId: interaction.channelId,
 			messageId: interaction.message.id,
-			teamAssignments,
+			teamAssignments: teamAssignmentsForAPI,
 		},
 	})
 
@@ -665,16 +671,16 @@ const handleRankLeave = async (
 	existingDescription: string | null,
 ) => {
 	// ランク戦キャンセル
-	const response = await apiClient.recruit.leave.$post({
-		json: {
-			recruitmentId,
+	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
+		param: {
+			id: recruitmentId,
 			discordId: interaction.user.id,
 		},
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { error?: string }
-		const message = error.error === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
+		const error = (await response.json()) as { message?: string }
+		const message = error.message === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
@@ -686,10 +692,10 @@ const handleRankLeave = async (
 	const data = (await response.json()) as {
 		success: boolean
 		count: number
-		participants: Participant[]
+		players: Participant[]
 	}
 
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -703,17 +709,17 @@ const handleRankLeave = async (
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
+		queue: {
 			creatorId: string
 			startTime: string | null
 		}
 	}
 
 	const embed = createRankedEmbed(
-		data.participants,
+		data.players,
 		CAPACITY,
-		recruitData.recruitment.creatorId,
-		recruitData.recruitment.startTime,
+		recruitData.queue.creatorId,
+		recruitData.queue.startTime,
 		existingDescription,
 	)
 	const buttons = createRankedButtons(recruitmentId, false)
@@ -730,7 +736,7 @@ const handleRankForce = async (
 	_existingDescription: string | null,
 ) => {
 	// ランク戦強制開始
-	const recruitResponse = await apiClient.recruit[':id'].$get({
+	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: recruitmentId },
 	})
 
@@ -744,13 +750,13 @@ const handleRankForce = async (
 	}
 
 	const recruitData = (await recruitResponse.json()) as {
-		recruitment: {
+		queue: {
 			guildId: string
 			creatorId: string
 			startTime: string | null
 			status: string
 		}
-		participants: Participant[]
+		players: Participant[]
 	}
 
 	// 管理者権限チェック（ランク戦は管理者のみ強制開始可能）
@@ -762,7 +768,7 @@ const handleRankForce = async (
 		return
 	}
 
-	if (recruitData.recruitment.status === 'closed') {
+	if (recruitData.queue.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
 			flags: MessageFlags.Ephemeral,
@@ -770,7 +776,7 @@ const handleRankForce = async (
 		return
 	}
 
-	if (recruitData.participants.length === 0) {
+	if (recruitData.players.length === 0) {
 		await interaction.reply({
 			content: '参加者がいないため開始できません。',
 			flags: MessageFlags.Ephemeral,
@@ -779,7 +785,7 @@ const handleRankForce = async (
 	}
 
 	// 募集終了API呼び出し
-	const closeResponse = await apiClient.recruit[':id'].$delete({
+	const closeResponse = await apiClient.v1.queues[':id'].$delete({
 		param: { id: recruitmentId },
 	})
 
@@ -793,7 +799,7 @@ const handleRankForce = async (
 	}
 
 	// チーム分け＆試合作成
-	await startRankedMatch(interaction, recruitData.recruitment.guildId, recruitData.participants)
+	await startRankedMatch(interaction, recruitData.queue.guildId, recruitData.players)
 }
 
 // ランク戦試合開始（チーム分け＆投票開始）
@@ -804,8 +810,9 @@ const startRankedMatch = async (
 ) => {
 	// 参加者のレーティングを取得
 	const discordIds = participants.map((p) => p.discordId)
-	const ratingsResponse = await apiClient.guild.rating.$get({
-		query: { guildId, discordIds },
+	const ratingsResponse = await apiClient.v1.guilds[':guildId'].ratings.$get({
+		param: { guildId },
+		query: { id: discordIds },
 	})
 
 	type RatingResponse = {
@@ -838,14 +845,26 @@ const startRankedMatch = async (
 	// 試合ID生成
 	const matchId = crypto.randomUUID()
 
+	// API用に大文字形式に変換
+	const teamAssignmentsForAPI = Object.fromEntries(
+		Object.entries(teamAssignments).map(([discordId, assignment]) => [
+			discordId,
+			{
+				team: assignment.team.toUpperCase() as 'BLUE' | 'RED',
+				role: assignment.role,
+				rating: assignment.rating,
+			},
+		]),
+	)
+
 	// 試合作成API呼び出し
-	const matchResponse = await apiClient.guild.match.$post({
+	const matchResponse = await apiClient.v1.guilds[':guildId'].matches.$post({
+		param: { guildId },
 		json: {
 			id: matchId,
-			guildId,
 			channelId: interaction.channelId,
 			messageId: interaction.message.id,
-			teamAssignments,
+			teamAssignments: teamAssignmentsForAPI,
 		},
 	})
 
@@ -876,21 +895,30 @@ const startRankedMatch = async (
 
 // 投票ハンドラー
 const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: string, vote: 'blue' | 'red') => {
-	// 投票API呼び出し
-	const response = await apiClient.guild.match[':id'].vote.$post({
-		param: { id: matchId },
+	if (!interaction.guildId) {
+		await interaction.reply({
+			content: 'このコマンドはサーバー内でのみ使用できます。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	// 投票API呼び出し（APIは大文字を期待）
+	const voteUpperCase = vote.toUpperCase() as 'BLUE' | 'RED'
+	const response = await apiClient.v1.guilds[':guildId'].matches[':matchId'].votes.$post({
+		param: { guildId: interaction.guildId, matchId },
 		json: {
 			discordId: interaction.user.id,
-			vote,
+			vote: voteUpperCase,
 		},
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { error?: string }
+		const error = (await response.json()) as { message?: string }
 		const message =
-			error.error === 'Not a participant'
+			error.message === 'Not a participant'
 				? '試合参加者のみ投票できます。'
-				: error.error === 'Match is not in voting state'
+				: error.message === 'Match is not in voting state'
 					? 'この試合は既に終了しています。'
 					: '投票に失敗しました。'
 
@@ -902,7 +930,7 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 	}
 
 	const data = (await response.json()) as {
-		success: boolean
+		changed: boolean
 		blueVotes: number
 		redVotes: number
 		totalParticipants: number
@@ -912,8 +940,8 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 	// 過半数で確定チェック
 	if (data.blueVotes >= data.votesRequired || data.redVotes >= data.votesRequired) {
 		// 試合確定
-		const confirmResponse = await apiClient.guild.match[':id'].confirm.$post({
-			param: { id: matchId },
+		const confirmResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].confirm.$post({
+			param: { guildId: interaction.guildId, matchId },
 		})
 
 		if (!confirmResponse.ok) {
@@ -926,11 +954,11 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 		}
 
 		const confirmData = (await confirmResponse.json()) as {
-			success: boolean
-			winningTeam: 'blue' | 'red'
+			matchId: string
+			winningTeam: 'BLUE' | 'RED'
 			ratingChanges: Array<{
 				discordId: string
-				team: 'blue' | 'red'
+				team: 'BLUE' | 'RED'
 				ratingBefore: number
 				ratingAfter: number
 				change: number
@@ -938,8 +966,14 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 			}>
 		}
 
-		// 結果Embed
-		const resultEmbed = createMatchResultEmbed(confirmData.winningTeam, confirmData.ratingChanges)
+		// 結果Embed（小文字形式に変換）
+		const resultEmbed = createMatchResultEmbed(
+			confirmData.winningTeam.toLowerCase() as 'blue' | 'red',
+			confirmData.ratingChanges.map((rc) => ({
+				...rc,
+				team: rc.team.toLowerCase() as 'blue' | 'red',
+			})),
+		)
 
 		await interaction.update({
 			embeds: [resultEmbed],
@@ -947,8 +981,8 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 		})
 	} else {
 		// 投票状況を更新
-		const matchResponse = await apiClient.guild.match[':id'].$get({
-			param: { id: matchId },
+		const matchResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].$get({
+			param: { guildId: interaction.guildId, matchId },
 		})
 
 		if (!matchResponse.ok) {
@@ -961,15 +995,34 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 
 		const matchData = (await matchResponse.json()) as {
 			match: {
-				teamAssignments: TeamAssignments
+				teamAssignments: Record<
+					string,
+					{
+						team: 'BLUE' | 'RED'
+						role: LolRole
+						rating: number
+					}
+				>
 				blueVotes: number
 				redVotes: number
 			}
 			votesRequired: number
 		}
 
+		// API形式（大文字）をアプリ形式（小文字）に変換
+		const teamAssignmentsLowerCase: TeamAssignments = Object.fromEntries(
+			Object.entries(matchData.match.teamAssignments).map(([discordId, assignment]) => [
+				discordId,
+				{
+					team: assignment.team.toLowerCase() as 'blue' | 'red',
+					role: assignment.role,
+					rating: assignment.rating,
+				},
+			]),
+		)
+
 		const embed = createMatchEmbed(
-			matchData.match.teamAssignments,
+			teamAssignmentsLowerCase,
 			matchData.match.blueVotes,
 			matchData.match.redVotes,
 			matchData.votesRequired,
@@ -985,9 +1038,17 @@ const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: st
 
 // 投票キャンセルハンドラー
 const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>, matchId: string) => {
+	if (!interaction.guildId) {
+		await interaction.reply({
+			content: 'このコマンドはサーバー内でのみ使用できます。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
 	// 試合情報取得
-	const matchResponse = await apiClient.guild.match[':id'].$get({
-		param: { id: matchId },
+	const matchResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].$get({
+		param: { guildId: interaction.guildId, matchId },
 	})
 
 	if (!matchResponse.ok) {
@@ -1000,7 +1061,14 @@ const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>, match
 
 	const matchData = (await matchResponse.json()) as {
 		match: {
-			teamAssignments: TeamAssignments
+			teamAssignments: Record<
+				string,
+				{
+					team: 'BLUE' | 'RED'
+					role: LolRole
+					rating: number
+				}
+			>
 		}
 	}
 
@@ -1014,14 +1082,14 @@ const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>, match
 	}
 
 	// 試合キャンセルAPI呼び出し
-	const cancelResponse = await apiClient.guild.match[':id'].$delete({
-		param: { id: matchId },
+	const cancelResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].$delete({
+		param: { guildId: interaction.guildId, matchId },
 	})
 
 	if (!cancelResponse.ok) {
-		const error = (await cancelResponse.json()) as { error?: string }
+		const error = (await cancelResponse.json()) as { message?: string }
 		const message =
-			error.error === 'Match is not in voting state' ? 'この試合は既に終了しています。' : 'キャンセルに失敗しました。'
+			error.message === 'Match is not in voting state' ? 'この試合は既に終了しています。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
@@ -1030,7 +1098,19 @@ const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>, match
 		return
 	}
 
-	const embed = createMatchEmbed(matchData.match.teamAssignments, 0, 0, 6, 'cancelled')
+	// API形式（大文字）をアプリ形式（小文字）に変換
+	const teamAssignmentsLowerCase: TeamAssignments = Object.fromEntries(
+		Object.entries(matchData.match.teamAssignments).map(([discordId, assignment]) => [
+			discordId,
+			{
+				team: assignment.team.toLowerCase() as 'blue' | 'red',
+				role: assignment.role,
+				rating: assignment.rating,
+			},
+		]),
+	)
+
+	const embed = createMatchEmbed(teamAssignmentsLowerCase, 0, 0, 6, 'cancelled')
 
 	await interaction.update({
 		embeds: [embed],
