@@ -7,11 +7,9 @@ import {
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
 import { COLORS, ROLE_EMOJI } from '@/config'
+import { LOL_ROLES, type LolRole } from '@/constants'
 
 export const CAPACITY = 10
-
-export const LOL_ROLES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'SUPPORT'] as const
-export type LolRole = (typeof LOL_ROLES)[number]
 
 export const ROLE_LABELS: Record<LolRole, string> = {
 	TOP: 'トップ',

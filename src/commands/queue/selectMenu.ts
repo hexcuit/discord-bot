@@ -1,7 +1,8 @@
 import { type CacheType, MessageFlags, type StringSelectMenuInteraction } from 'discord.js'
+import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { type LolRole, parseCustomId } from './shared'
+import { parseCustomId } from './shared'
 
 export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<CacheType>) => {
 	const { action, recruitmentId } = parseCustomId(interaction.customId)
@@ -16,10 +17,12 @@ export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<
 			const roleType = action === 'select_main_role' ? 'main' : 'sub'
 
 			// APIでロールを更新
-			await apiClient.recruit['update-role'].$post({
-				json: {
-					recruitmentId,
+			await apiClient.v1.queues[':id'].players[':discordId'].$patch({
+				param: {
+					id: recruitmentId,
 					discordId: interaction.user.id,
+				},
+				json: {
 					mainRole: roleType === 'main' ? selectedValue : undefined,
 					subRole: roleType === 'sub' ? selectedValue : undefined,
 				},

@@ -19,7 +19,7 @@ export const executeRank = async (interaction: ChatInputCommandInteraction, guil
 	const reply = await interaction.fetchReply()
 
 	try {
-		const response = await apiClient.recruit.$post({
+		const response = await apiClient.v1.queues.$post({
 			json: {
 				id: recruitmentId,
 				guildId,

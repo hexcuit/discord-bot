@@ -78,8 +78,9 @@ const executeServer = async (interaction: Parameters<Command['execute']>[0]) => 
 
 	try {
 		// レーティング取得
-		const response = await apiClient.guild.rating.$get({
-			query: { guildId, discordIds: [targetUser.id] },
+		const response = await apiClient.v1.guilds[':guildId'].ratings.$get({
+			param: { guildId },
+			query: { id: [targetUser.id] },
 		})
 
 		if (!response.ok) {
@@ -101,8 +102,9 @@ const executeServer = async (interaction: Parameters<Command['execute']>[0]) => 
 		}
 
 		// ランキング内での順位を取得
-		const rankingResponse = await apiClient.guild.ranking.$get({
-			query: { guildId, limit: '100' },
+		const rankingResponse = await apiClient.v1.guilds[':guildId'].rankings.$get({
+			param: { guildId },
+			query: { limit: '100' },
 		})
 
 		let position: number | null = null
@@ -117,8 +119,9 @@ const executeServer = async (interaction: Parameters<Command['execute']>[0]) => 
 		// 試合履歴を取得
 		let matchHistory: MatchHistoryItem[] = []
 		try {
-			const historyResponse = await apiClient.guild['match-history'].$get({
-				query: { guildId, discordId: targetUser.id, limit: '5' },
+			const historyResponse = await apiClient.v1.guilds[':guildId'].users[':discordId'].$get({
+				param: { guildId, discordId: targetUser.id },
+				query: { limit: '5' },
 			})
 			if (historyResponse.ok) {
 				const historyData = (await historyResponse.json()) as {
@@ -167,8 +170,9 @@ const executeLeaderboard = async (interaction: Parameters<Command['execute']>[0]
 	const limit = interaction.options.getInteger('limit') ?? 10
 
 	try {
-		const response = await apiClient.guild.ranking.$get({
-			query: { guildId, limit: limit.toString() },
+		const response = await apiClient.v1.guilds[':guildId'].rankings.$get({
+			param: { guildId },
+			query: { limit: limit.toString() },
 		})
 
 		if (!response.ok) {

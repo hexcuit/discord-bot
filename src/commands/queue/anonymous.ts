@@ -24,7 +24,7 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 	})
 
 	try {
-		const response = await apiClient.recruit.$post({
+		const response = await apiClient.v1.queues.$post({
 			json: {
 				id: recruitmentId,
 				guildId,
