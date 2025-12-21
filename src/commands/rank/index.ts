@@ -1,5 +1,5 @@
 import { AttachmentBuilder, EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js'
-import { colors } from '@/config'
+import { COLORS } from '@/config'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
@@ -220,7 +220,7 @@ const executeLeaderboard = async (interaction: Parameters<Command['execute']>[0]
 		const embed = new EmbedBuilder()
 			.setTitle('🏆 サーバーランキング')
 			.setDescription(rankingLines.join('\n'))
-			.setColor(colors.primary)
+			.setColor(COLORS.primary)
 			.setFooter({ text: `上位${data.rankings.length}人を表示` })
 
 		await interaction.editReply({ embeds: [embed] })

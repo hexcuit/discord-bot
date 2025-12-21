@@ -1,5 +1,5 @@
 import { type ChatInputCommandInteraction, EmbedBuilder, type GuildMember } from 'discord.js'
-import { colors } from '@/config'
+import { COLORS } from '@/config'
 import { getFilteredMembers, shuffleArray } from './shared'
 
 // 型定義
@@ -42,12 +42,12 @@ function createRandomTeamEmbeds(
 	const blueTeamEmbed = new EmbedBuilder()
 		.setTitle('Blue Team')
 		.addFields(blueTeam.members.map((member) => formatTeamMemberFieldSimple(member)))
-		.setColor(colors.blue)
+		.setColor(COLORS.blue)
 
 	const redTeamEmbed = new EmbedBuilder()
 		.setTitle('Red Team')
 		.addFields(redTeam.members.map((member) => formatTeamMemberFieldSimple(member)))
-		.setColor(colors.red)
+		.setColor(COLORS.red)
 
 	const excludedMembers = options?.excludedMembers ?? []
 	const teamInfoEmbed = new EmbedBuilder().setTitle('Team Info').addFields(

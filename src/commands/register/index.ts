@@ -1,5 +1,5 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js'
-import { colors, emoji } from '@/config'
+import { COLORS, RANK_EMOJI } from '@/config'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
@@ -95,12 +95,12 @@ export default {
 				return
 			}
 
-			const oldEmoji = emoji[dataGet.tier as keyof typeof emoji] || ''
-			const newEmoji = emoji[tier as keyof typeof emoji] || ''
+			const oldEmoji = RANK_EMOJI[dataGet.tier as keyof typeof RANK_EMOJI] || ''
+			const newEmoji = RANK_EMOJI[tier as keyof typeof RANK_EMOJI] || ''
 
 			const embedMessage = new EmbedBuilder()
 				.setTitle('ランク登録完了')
-				.setColor(colors.success)
+				.setColor(COLORS.success)
 				.addFields(
 					{
 						name: 'Old Rank',

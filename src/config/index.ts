@@ -1,14 +1,14 @@
-export const colors = {
+export const COLORS = {
 	success: 0x6aa84f,
 	error: 0xcc0000,
 	warn: 0xf1c232,
-	primary: 0x5865f2, // Discord Blurple
+	primary: 0x5865f2,
 
 	blue: 0x0000ff,
 	red: 0xff0000,
 }
 
-export const emoji = {
+export const RANK_EMOJI = {
 	UNRANKED: '<:Unranked:1422076454136451125>',
 	IRON: '<:Iron:1422076633023778916>',
 	BRONZE: '<:Bronze:1422076660521635840>',
@@ -20,4 +20,12 @@ export const emoji = {
 	MASTER: '<:Master:1422077089367986186>',
 	GRANDMASTER: '<:Grandmaster:1422077123144843274>',
 	CHALLENGER: '<:Challenger:1422077147501297664>',
+}
+
+export const ROLE_EMOJI = {
+	TOP: '<:Top:1450763992216768552>',
+	JUNGLE: '<:Jungle:1450764116103921716>',
+	MIDDLE: '<:Middle:1450764306063818763>',
+	BOTTOM: '<:Bottom:1450764451312832655>',
+	SUPPORT: '<:Support:1450764480148672717>',
 }
