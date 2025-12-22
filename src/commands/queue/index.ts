@@ -1,9 +1,9 @@
 import { InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js'
 import type { Command } from '@/types/command'
-import { executeAnonymous } from './anonymous'
+import { executeAnonymous } from './anonymous/index'
 import { handleButton } from './button'
-import { executeCreate } from './create'
-import { executeRank } from './rank'
+import { executeCreate } from './create/index'
+import { executeRank } from './rank/index'
 import { handleSelectMenu } from './selectMenu'
 
 export default {

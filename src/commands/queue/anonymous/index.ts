@@ -1,7 +1,8 @@
 import { type ChatInputCommandInteraction, MessageFlags } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { CAPACITY, createButtons, createEmbed } from './shared'
+import { CAPACITY } from '../shared/constants'
+import { createButtons, createEmbed } from '../shared/embeds'
 
 export const executeAnonymous = async (interaction: ChatInputCommandInteraction, guildId: string) => {
 	const description = interaction.options.getString('description')

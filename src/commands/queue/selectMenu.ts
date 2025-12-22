@@ -2,7 +2,7 @@ import { type CacheType, MessageFlags, type StringSelectMenuInteraction } from '
 import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { parseCustomId } from './shared'
+import { parseCustomId } from './shared/utils'
 
 export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<CacheType>) => {
 	const { action, recruitmentId } = parseCustomId(interaction.customId)
