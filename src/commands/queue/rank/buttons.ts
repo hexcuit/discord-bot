@@ -11,7 +11,7 @@ import {
 	createRankedEmbed,
 	createRoleSelectMenu,
 	createVoteButtons,
-} from '../shared/embeds'
+} from './embeds'
 import type { Participant } from '../shared/types'
 
 export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruitmentId: string) => {

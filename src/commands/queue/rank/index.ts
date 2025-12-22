@@ -2,7 +2,7 @@ import type { ChatInputCommandInteraction } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from '../shared/constants'
-import { createRankedButtons, createRankedEmbed } from '../shared/embeds'
+import { createRankedButtons, createRankedEmbed } from './embeds'
 
 export const executeRank = async (interaction: ChatInputCommandInteraction, guildId: string) => {
 	const description = interaction.options.getString('description')
