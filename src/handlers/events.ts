@@ -1,5 +1,5 @@
-import { Glob } from 'bun'
 import { type Client, Events } from 'discord.js'
+import * as events from '@/events'
 import { logger } from '@/lib/logger'
 import type { Event } from '@/types/event'
 
@@ -31,75 +31,47 @@ const isValidEvent = (evt: unknown): evt is Event => {
 	return true
 }
 
-type LoadResult = {
-	file: string
-	event: Event | null
-	error?: unknown
-}
-
-export const loadEvents = async (client: Client): Promise<void> => {
-	const glob = new Glob('*/index.{js,ts}')
-	const dir = `${import.meta.dir}/../events`
-
-	const eventFiles = await Array.fromAsync(glob.scan(dir))
-
-	const loadResults = await Promise.all(
-		eventFiles.map(async (file): Promise<LoadResult> => {
-			try {
-				const eventModule = await import(`${dir}/${file}`)
-				const event = eventModule.default
-
-				if (!event) {
-					logger.error(`Event file ${file} does not export a default event`)
-					return { file, event: null }
-				}
-
-				if (!isValidEvent(event)) {
-					logger.error(`Invalid event structure: ${file}`)
-					return { file, event: null }
-				}
-
-				return { file, event }
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : String(error)
-				logger.error(`Failed to load event ${file}:`, errorMessage)
-				return { file, event: null, error }
-			}
-		}),
-	)
+export const loadEvents = (client: Client): void => {
+	const eventList = Object.values(events) as unknown[]
 
 	let loadedCount = 0
 	let failedCount = 0
 
-	loadResults.forEach((result) => {
-		if (result.event) {
-			const { event } = result
-
-			if (event.once) {
-				client.once(event.name, (...parameters) => {
-					try {
-						return event.execute(...parameters)
-					} catch (error) {
-						const errorMessage = error instanceof Error ? error.message : String(error)
-						logger.error(`Error in event ${event.name}:`, errorMessage)
-					}
-				})
-			} else {
-				client.on(event.name, (...parameters) => {
-					try {
-						return event.execute(...parameters)
-					} catch (error) {
-						const errorMessage = error instanceof Error ? error.message : String(error)
-						logger.error(`Error in event ${event.name}:`, errorMessage)
-					}
-				})
-			}
-
-			loadedCount++
-		} else {
+	for (const rawEvent of eventList) {
+		if (!rawEvent) {
 			failedCount++
+			continue
 		}
-	})
+
+		if (!isValidEvent(rawEvent)) {
+			logger.error('Invalid event structure')
+			failedCount++
+			continue
+		}
+
+		const event = rawEvent
+		if (event.once) {
+			client.once(event.name, (...parameters) => {
+				try {
+					return event.execute(...parameters)
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : String(error)
+					logger.error(`Error in event ${event.name}:`, errorMessage)
+				}
+			})
+		} else {
+			client.on(event.name, (...parameters) => {
+				try {
+					return event.execute(...parameters)
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : String(error)
+					logger.error(`Error in event ${event.name}:`, errorMessage)
+				}
+			})
+		}
+
+		loadedCount++
+	}
 
 	logger.info(`Events loaded: ${loadedCount} succeeded, ${failedCount} failed`)
 }

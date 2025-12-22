@@ -7,6 +7,10 @@
 				"glob": "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}",
 				"run": "bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}",
 				"stage_fixed": true
+			},
+			"generate": {
+				"glob": "src/{commands,events}/*/index.ts",
+				"run": "bun run generate && git add src/commands/index.ts src/events/index.ts"
 			}
 		}
 	}

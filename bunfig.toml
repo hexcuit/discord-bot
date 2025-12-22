@@ -1,4 +1,5 @@
 [install]
 exact = true
+
 [test]
-coverage = true
+coverageSkipTestFiles = true
