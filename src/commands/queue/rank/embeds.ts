@@ -64,7 +64,7 @@ export const createRankedButtons = (queueId: string, disabled: boolean) => {
 			.setDisabled(disabled),
 		new ButtonBuilder()
 			.setCustomId(`queue:rank_leave:${queueId}`)
-			.setLabel('キャンセル')
+			.setLabel('退出')
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()

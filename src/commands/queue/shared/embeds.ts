@@ -55,7 +55,7 @@ export const createButtons = (queueId: string, disabled: boolean) => {
 			.setDisabled(disabled),
 		new ButtonBuilder()
 			.setCustomId(`queue:leave:${queueId}`)
-			.setLabel('キャンセル')
+			.setLabel('退出')
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
