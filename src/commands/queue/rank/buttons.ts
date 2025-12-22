@@ -1,4 +1,4 @@
-import type { ButtonInteraction, CacheType } from 'discord.js'
+import type { ButtonInteraction, CacheType, Message } from 'discord.js'
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } from 'discord.js'
 import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
@@ -14,51 +14,19 @@ import {
 	createVoteButtons,
 } from './embeds'
 
+// Temporary storage for pending role selections (before join is confirmed)
+// Key: `${queueId}:${discordId}`, Value: { mainRole, subRole }
+export const pendingRoleSelections = new Map<string, { mainRole: LolRole | null; subRole: LolRole | null }>()
+
 export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
-	// まず参加処理を行う（ロール選択前に参加させることで、update-roleが機能する）
-	const joinResponse = await apiClient.v1.queues[':id'].players.$post({
-		param: { id: queueId },
-		json: {
-			discordId: interaction.user.id,
-		},
-	})
-
-	if (!joinResponse.ok) {
-		const error = (await joinResponse.json()) as { message?: string }
-		const message =
-			error.message === 'Already joined'
-				? '既に参加しています。'
-				: error.message === 'Recruitment is full'
-					? '定員に達しています。'
-					: error.message === 'Recruitment is not open'
-						? '募集は終了しています。'
-						: '参加に失敗しました。'
-
-		await interaction.reply({
-			content: message,
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	const joinData = (await joinResponse.json()) as {
-		player: {
-			discordId: string
-			mainRole: string | null
-			subRole: string | null
-		}
-		isFull: boolean
-		count: number
-	}
-
-	// 募集情報取得
+	// Check if already joined via API
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
 		await interaction.reply({
-			content: '参加しましたが、募集情報の取得に失敗しました。',
+			content: '募集情報の取得に失敗しました。',
 			flags: MessageFlags.Ephemeral,
 		})
 		return
@@ -68,52 +36,56 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 		queue: {
 			creatorId: string
 			startTime: string | null
+			status: string
 		}
 		players: Participant[]
 	}
 
-	// 元のメッセージを更新
-	const existingDescription = interaction.message.embeds[0]?.description ?? null
-	const embed = createRankedEmbed(
-		recruitData.players,
-		CAPACITY,
-		recruitData.queue.creatorId,
-		recruitData.queue.startTime,
-		existingDescription,
-	)
-
-	// 10人揃った場合は別処理
-	if (joinData.isFull && interaction.guildId) {
-		await interaction.update({
-			embeds: [embed],
-			components: [],
+	// Check if recruitment is still open
+	if (recruitData.queue.status === 'closed') {
+		await interaction.reply({
+			content: '募集は終了しています。',
+			flags: MessageFlags.Ephemeral,
 		})
-
-		// チーム分け＆試合作成
-		await startRankedMatchFromFull(interaction, queueId, recruitData.players)
 		return
 	}
 
-	const buttons = createRankedButtons(queueId, false)
-	await interaction.update({
-		embeds: [embed],
-		components: [buttons],
-	})
+	// Check if already joined
+	if (recruitData.players.some((p) => p.discordId === interaction.user.id)) {
+		await interaction.reply({
+			content: '既に参加しています。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
 
-	// ロール選択UIを表示
+	// Check if queue is full
+	if (recruitData.players.length >= CAPACITY) {
+		await interaction.reply({
+			content: '定員に達しています。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	// Initialize pending role selection
+	const pendingKey = `${queueId}:${interaction.user.id}`
+	pendingRoleSelections.set(pendingKey, { mainRole: null, subRole: null })
+
+	// Show role selection UI (do not join yet)
 	const mainRoleSelect = createRoleSelectMenu(queueId, 'main')
 	const subRoleSelect = createRoleSelectMenu(queueId, 'sub')
 	const originalMessageId = interaction.message.id
 
-	await interaction.followUp({
-		content: '参加しました！ロールを選択してください。\n選択後、「完了」ボタンを押してください。',
+	await interaction.reply({
+		content: 'ロールを選択してください。\n選択後、「参加確定」ボタンを押してください。',
 		components: [
 			mainRoleSelect,
 			subRoleSelect,
 			new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
 					.setCustomId(`queue:confirm_rank_join:${queueId}:${originalMessageId}`)
-					.setLabel('完了')
+					.setLabel('参加確定')
 					.setStyle(ButtonStyle.Success),
 			),
 		],
@@ -135,14 +107,68 @@ export const handleConfirmRankJoin = async (
 		return
 	}
 
-	// 募集情報を取得（ロール選択後の最新状態）
+	// Get pending role selection
+	const pendingKey = `${queueId}:${interaction.user.id}`
+	const pendingRoles = pendingRoleSelections.get(pendingKey)
+
+	if (!pendingRoles) {
+		await interaction.update({
+			content: 'エラー: ロール選択情報が見つかりません。もう一度参加ボタンを押してください。',
+			components: [],
+		})
+		return
+	}
+
+	// Join the queue via API with roles
+	const joinResponse = await apiClient.v1.queues[':id'].players.$post({
+		param: { id: queueId },
+		json: {
+			discordId: interaction.user.id,
+			mainRole: pendingRoles.mainRole ?? undefined,
+			subRole: pendingRoles.subRole ?? undefined,
+		},
+	})
+
+	if (!joinResponse.ok) {
+		const error = (await joinResponse.json()) as { message?: string }
+		const message =
+			error.message === 'Already joined'
+				? '既に参加しています。'
+				: error.message === 'Recruitment is full'
+					? '定員に達しています。'
+					: error.message === 'Recruitment is not open'
+						? '募集は終了しています。'
+						: '参加に失敗しました。'
+
+		pendingRoleSelections.delete(pendingKey)
+		await interaction.update({
+			content: message,
+			components: [],
+		})
+		return
+	}
+
+	const joinData = (await joinResponse.json()) as {
+		player: {
+			discordId: string
+			mainRole: string | null
+			subRole: string | null
+		}
+		isFull: boolean
+		count: number
+	}
+
+	// Clean up pending selection
+	pendingRoleSelections.delete(pendingKey)
+
+	// Fetch updated queue info
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
 		await interaction.update({
-			content: 'ロールを設定しました。',
+			content: '参加しました！',
 			components: [],
 		})
 		return
@@ -157,14 +183,14 @@ export const handleConfirmRankJoin = async (
 	}
 
 	await interaction.update({
-		content: 'ロールを設定しました。',
+		content: '参加しました！',
 		components: [],
 	})
 
-	// 元のメッセージを取得して更新
+	// Get original message and update
 	const channel = interaction.channel
 	if (!channel) {
-		logger.error('チャンネルが見つかりません')
+		logger.error('Channel not found')
 		return
 	}
 
@@ -178,31 +204,43 @@ export const handleConfirmRankJoin = async (
 		recruitData.queue.startTime,
 		existingDescription,
 	)
-	const buttons = createRankedButtons(queueId, false)
 
+	// If queue is now full, start the match
+	if (joinData.isFull && interaction.guildId) {
+		await originalMessage.edit({
+			embeds: [embed],
+			components: [],
+		})
+
+		await startRankedMatchFromFull(interaction, originalMessage, queueId, recruitData.players)
+		return
+	}
+
+	const buttons = createRankedButtons(queueId, false)
 	await originalMessage.edit({
 		embeds: [embed],
 		components: [buttons],
 	})
 }
 
-// 10人揃った時のチーム分け＆試合作成
+// Start ranked match when queue is full (team assignment & voting)
 const startRankedMatchFromFull = async (
 	interaction: ButtonInteraction<CacheType>,
+	originalMessage: Message,
 	queueId: string,
 	participants: Participant[],
 ) => {
 	if (!interaction.guildId) return
 
-	// 募集終了
+	// Close the recruitment
 	await apiClient.v1.queues[':id'].$delete({
 		param: { id: queueId },
 	})
 
-	// チーム分け＆試合作成
+	// Generate match ID
 	const matchId = crypto.randomUUID()
 
-	// レーティング取得
+	// Fetch ratings for participants
 	const discordIds = participants.map((p) => p.discordId)
 	const ratingsResponse = await apiClient.v1.guilds[':guildId'].ratings.$get({
 		param: { guildId: interaction.guildId },
@@ -222,7 +260,7 @@ const startRankedMatchFromFull = async (
 		ratings = ratingsData.ratings
 	}
 
-	// レーティングを参加者にマッピング
+	// Map ratings to participants
 	const participantsWithRating = participants.map((p) => {
 		const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
 		return {
@@ -233,10 +271,10 @@ const startRankedMatchFromFull = async (
 		}
 	})
 
-	// チームバランス
+	// Balance teams
 	const teamAssignments = balanceTeamsByElo(participantsWithRating)
 
-	// API用に大文字形式に変換
+	// Convert to API format (uppercase team names)
 	const teamAssignmentsForAPI = Object.fromEntries(
 		Object.entries(teamAssignments).map(([discordId, assignment]) => [
 			discordId,
@@ -248,23 +286,23 @@ const startRankedMatchFromFull = async (
 		]),
 	)
 
-	// 試合作成API呼び出し
+	// Create match via API
 	const matchResponse = await apiClient.v1.guilds[':guildId'].matches.$post({
 		param: { guildId: interaction.guildId },
 		json: {
 			id: matchId,
 			channelId: interaction.channelId,
-			messageId: interaction.message.id,
+			messageId: originalMessage.id,
 			teamAssignments: teamAssignmentsForAPI,
 		},
 	})
 
-	if (matchResponse.ok) {
+	if (matchResponse.ok && originalMessage.channel.isSendable()) {
 		const matchEmbed = createMatchEmbed(teamAssignments, 0, 0, 6)
 		const voteButtons = createVoteButtons(matchId)
 
 		const mentions = participants.map((p) => `<@${p.discordId}>`).join(' ')
-		await interaction.followUp({
+		await originalMessage.channel.send({
 			content: `🏆 ランク戦募集完了！チーム分けが完了しました！ ${mentions}\n\n試合終了後、勝利チームを投票してください。`,
 			embeds: [matchEmbed],
 			components: [voteButtons],
