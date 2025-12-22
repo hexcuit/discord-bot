@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import { balanceTeamsByElo } from '../shared/balance'
 import { CAPACITY, INITIAL_RATING } from '../shared/constants'
+import type { Participant } from '../shared/types'
 import {
 	createMatchEmbed,
 	createRankedButtons,
@@ -12,7 +13,6 @@ import {
 	createRoleSelectMenu,
 	createVoteButtons,
 } from './embeds'
-import type { Participant } from '../shared/types'
 
 export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruitmentId: string) => {
 	// まず参加処理を行う（ロール選択前に参加させることで、update-roleが機能する）

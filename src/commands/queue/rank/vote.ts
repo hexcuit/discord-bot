@@ -3,8 +3,8 @@ import { MessageFlags } from 'discord.js'
 import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { createMatchEmbed, createMatchResultEmbed, createVoteButtons } from './embeds'
 import type { TeamAssignments } from '../shared/types'
+import { createMatchEmbed, createMatchResultEmbed, createVoteButtons } from './embeds'
 
 export const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: string, vote: 'blue' | 'red') => {
 	if (!interaction.guildId) {
