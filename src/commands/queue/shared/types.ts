@@ -1,4 +1,4 @@
-import type { LolRole } from '@/constants'
+import type { LolRole, LolTeam } from '@/constants'
 
 export type Participant = {
 	discordId: string
@@ -7,7 +7,7 @@ export type Participant = {
 }
 
 export type TeamAssignment = {
-	team: 'blue' | 'red'
+	team: LolTeam
 	role: LolRole
 	rating: number
 }

@@ -32,14 +32,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			creatorId: string
-			startTime: string | null
-			status: string
-		}
-		players: Participant[]
-	}
+	const recruitData = await recruitResponse.json()
 
 	// Check if recruitment is still open
 	if (recruitData.queue.status === 'closed') {
@@ -130,7 +123,7 @@ export const handleConfirmRankJoin = async (
 	})
 
 	if (!joinResponse.ok) {
-		const error = (await joinResponse.json()) as { message?: string }
+		const error = await joinResponse.json()
 		const message =
 			error.message === 'Already joined'
 				? '既に参加しています。'
@@ -148,15 +141,7 @@ export const handleConfirmRankJoin = async (
 		return
 	}
 
-	const joinData = (await joinResponse.json()) as {
-		player: {
-			discordId: string
-			mainRole: string | null
-			subRole: string | null
-		}
-		isFull: boolean
-		count: number
-	}
+	const joinData = await joinResponse.json()
 
 	// Clean up pending selection
 	pendingRoleSelections.delete(pendingKey)
@@ -174,13 +159,7 @@ export const handleConfirmRankJoin = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			creatorId: string
-			startTime: string | null
-		}
-		players: Participant[]
-	}
+	const recruitData = await recruitResponse.json()
 
 	await interaction.update({
 		content: '参加しました！',
@@ -247,26 +226,16 @@ const startRankedMatchFromFull = async (
 		query: { id: discordIds },
 	})
 
-	type RatingResponse = {
-		ratings: Array<{
-			discordId: string
-			rating: number | null
-		}>
-	}
-
-	let ratings: RatingResponse['ratings'] = []
-	if (ratingsResponse.ok) {
-		const ratingsData = (await ratingsResponse.json()) as RatingResponse
-		ratings = ratingsData.ratings
-	}
+	const ratingsData = ratingsResponse.ok ? await ratingsResponse.json() : null
+	const ratings = ratingsData?.ratings ?? []
 
 	// Map ratings to participants
 	const participantsWithRating = participants.map((p) => {
 		const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
 		return {
 			discordId: p.discordId,
-			mainRole: p.mainRole as LolRole | null,
-			subRole: p.subRole as LolRole | null,
+			mainRole: p.mainRole,
+			subRole: p.subRole,
 			rating: ratingInfo?.rating ?? INITIAL_RATING,
 		}
 	})
@@ -279,7 +248,7 @@ const startRankedMatchFromFull = async (
 		Object.entries(teamAssignments).map(([discordId, assignment]) => [
 			discordId,
 			{
-				team: assignment.team.toUpperCase() as 'BLUE' | 'RED',
+				team: assignment.team,
 				role: assignment.role,
 				rating: assignment.rating,
 			},
@@ -324,7 +293,7 @@ export const handleRankLeave = async (
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { message?: string }
+		const error = await response.json()
 		const message = error.message === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
@@ -332,12 +301,6 @@ export const handleRankLeave = async (
 			flags: MessageFlags.Ephemeral,
 		})
 		return
-	}
-
-	const data = (await response.json()) as {
-		success: boolean
-		count: number
-		players: Participant[]
 	}
 
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
@@ -353,15 +316,10 @@ export const handleRankLeave = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			creatorId: string
-			startTime: string | null
-		}
-	}
+	const recruitData = await recruitResponse.json()
 
 	const embed = createRankedEmbed(
-		data.players,
+		recruitData.players,
 		CAPACITY,
 		recruitData.queue.creatorId,
 		recruitData.queue.startTime,
@@ -394,15 +352,7 @@ export const handleRankForce = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			guildId: string
-			creatorId: string
-			startTime: string | null
-			status: string
-		}
-		players: Participant[]
-	}
+	const recruitData = await recruitResponse.json()
 
 	// 管理者権限チェック（ランク戦は管理者のみ強制開始可能）
 	if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
@@ -460,26 +410,16 @@ const startRankedMatch = async (
 		query: { id: discordIds },
 	})
 
-	type RatingResponse = {
-		ratings: Array<{
-			discordId: string
-			rating: number | null
-		}>
-	}
+	const ratingsData = ratingsResponse.ok ? await ratingsResponse.json() : null
+	const ratings = ratingsData?.ratings ?? []
 
-	let ratings: RatingResponse['ratings'] = []
-	if (ratingsResponse.ok) {
-		const data = (await ratingsResponse.json()) as RatingResponse
-		ratings = data.ratings
-	}
-
-	// レーティングを参加者にマッピング（未登録は初期値1500）
+	// レーティングを参加者にマッピング
 	const participantsWithRating = participants.map((p) => {
 		const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
 		return {
 			discordId: p.discordId,
-			mainRole: p.mainRole as LolRole | null,
-			subRole: p.subRole as LolRole | null,
+			mainRole: p.mainRole,
+			subRole: p.subRole,
 			rating: ratingInfo?.rating ?? INITIAL_RATING,
 		}
 	})
@@ -495,7 +435,7 @@ const startRankedMatch = async (
 		Object.entries(teamAssignments).map(([discordId, assignment]) => [
 			discordId,
 			{
-				team: assignment.team.toUpperCase() as 'BLUE' | 'RED',
+				team: assignment.team,
 				role: assignment.role,
 				rating: assignment.rating,
 			},

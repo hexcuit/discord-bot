@@ -71,10 +71,10 @@ export const balanceTeamsByElo = (participants: ParticipantWithRating[]): TeamAs
 
 	const result: TeamAssignments = {}
 	for (const p of blueAssigned) {
-		result[p.discordId] = { team: 'blue', role: p.role, rating: p.rating }
+		result[p.discordId] = { team: 'BLUE', role: p.role, rating: p.rating }
 	}
 	for (const p of redAssigned) {
-		result[p.discordId] = { team: 'red', role: p.role, rating: p.rating }
+		result[p.discordId] = { team: 'RED', role: p.role, rating: p.rating }
 	}
 
 	return result

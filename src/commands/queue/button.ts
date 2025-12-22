@@ -53,10 +53,10 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 
 			// Vote
 			case 'vote_blue':
-				await handleVote(interaction, queueId, 'blue')
+				await handleVote(interaction, queueId, 'BLUE')
 				break
 			case 'vote_red':
-				await handleVote(interaction, queueId, 'red')
+				await handleVote(interaction, queueId, 'RED')
 				break
 			case 'vote_cancel':
 				await handleVoteCancel(interaction, queueId)

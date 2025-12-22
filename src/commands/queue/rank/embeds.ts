@@ -7,7 +7,7 @@ import {
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
 import { COLORS, ROLE_EMOJI } from '@/config'
-import { LOL_ROLES, type LolRole } from '@/constants'
+import { LOL_ROLES, type LolRole, type LolTeam } from '@/constants'
 import { ROLE_LABELS } from '../shared/constants'
 import type { Participant, TeamAssignments } from '../shared/types'
 import { formatRole } from '../shared/utils'
@@ -105,10 +105,10 @@ export const createMatchEmbed = (
 	status: 'voting' | 'confirmed' | 'cancelled' = 'voting',
 ) => {
 	const blueTeam = Object.entries(teamAssignments)
-		.filter(([, a]) => a.team === 'blue')
+		.filter(([, a]) => a.team === 'BLUE')
 		.map(([discordId, a]) => ({ discordId, ...a }))
 	const redTeam = Object.entries(teamAssignments)
-		.filter(([, a]) => a.team === 'red')
+		.filter(([, a]) => a.team === 'RED')
 		.map(([discordId, a]) => ({ discordId, ...a }))
 
 	const blueTotal = blueTeam.reduce((sum, p) => sum + p.rating, 0)
@@ -174,18 +174,18 @@ export const createVoteButtons = (matchId: string, disabled = false) => {
 }
 
 export const createMatchResultEmbed = (
-	winningTeam: 'blue' | 'red',
+	winningTeam: LolTeam,
 	ratingChanges: Array<{
 		discordId: string
-		team: 'blue' | 'red'
+		team: LolTeam
 		ratingBefore: number
 		ratingAfter: number
 		change: number
 		rank: string
 	}>,
 ) => {
-	const blueChanges = ratingChanges.filter((r) => r.team === 'blue')
-	const redChanges = ratingChanges.filter((r) => r.team === 'red')
+	const blueChanges = ratingChanges.filter((r) => r.team === 'BLUE')
+	const redChanges = ratingChanges.filter((r) => r.team === 'RED')
 
 	const formatChange = (r: (typeof ratingChanges)[0]) => {
 		const changeStr = r.change >= 0 ? `+${r.change}` : `${r.change}`
@@ -194,8 +194,8 @@ export const createMatchResultEmbed = (
 	}
 
 	const embed = new EmbedBuilder()
-		.setTitle(`🏆 試合結果 - ${winningTeam === 'blue' ? '🔵 Blue' : '🔴 Red'} チーム勝利！`)
-		.setColor(winningTeam === 'blue' ? COLORS.blue : COLORS.red)
+		.setTitle(`🏆 試合結果 - ${winningTeam === 'BLUE' ? '🔵 Blue' : '🔴 Red'} チーム勝利！`)
+		.setColor(winningTeam === 'BLUE' ? COLORS.blue : COLORS.red)
 		.addFields(
 			{
 				name: '🔵 Blue Team',

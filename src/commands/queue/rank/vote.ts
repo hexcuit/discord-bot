@@ -1,12 +1,12 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
 import { MessageFlags } from 'discord.js'
-import type { LolRole } from '@/constants'
+import type { LolTeam } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import type { TeamAssignments } from '../shared/types'
 import { createMatchEmbed, createMatchResultEmbed, createVoteButtons } from './embeds'
 
-export const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: string, vote: 'blue' | 'red') => {
+export const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: string, vote: LolTeam) => {
 	if (!interaction.guildId) {
 		await interaction.reply({
 			content: 'このコマンドはサーバー内でのみ使用できます。',
@@ -15,18 +15,16 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 		return
 	}
 
-	// 投票API呼び出し（APIは大文字を期待）
-	const voteUpperCase = vote.toUpperCase() as 'BLUE' | 'RED'
 	const response = await apiClient.v1.guilds[':guildId'].matches[':matchId'].votes.$post({
 		param: { guildId: interaction.guildId, matchId },
 		json: {
 			discordId: interaction.user.id,
-			vote: voteUpperCase,
+			vote,
 		},
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { message?: string }
+		const error = await response.json()
 		const message =
 			error.message === 'Not a participant'
 				? '試合参加者のみ投票できます。'
@@ -41,13 +39,7 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 		return
 	}
 
-	const data = (await response.json()) as {
-		changed: boolean
-		blueVotes: number
-		redVotes: number
-		totalParticipants: number
-		votesRequired: number
-	}
+	const data = await response.json()
 
 	// 過半数で確定チェック
 	if (data.blueVotes >= data.votesRequired || data.redVotes >= data.votesRequired) {
@@ -65,27 +57,9 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 			return
 		}
 
-		const confirmData = (await confirmResponse.json()) as {
-			matchId: string
-			winningTeam: 'BLUE' | 'RED'
-			ratingChanges: Array<{
-				discordId: string
-				team: 'BLUE' | 'RED'
-				ratingBefore: number
-				ratingAfter: number
-				change: number
-				rank: string
-			}>
-		}
+		const confirmData = await confirmResponse.json()
 
-		// 結果Embed（小文字形式に変換）
-		const resultEmbed = createMatchResultEmbed(
-			confirmData.winningTeam.toLowerCase() as 'blue' | 'red',
-			confirmData.ratingChanges.map((rc) => ({
-				...rc,
-				team: rc.team.toLowerCase() as 'blue' | 'red',
-			})),
-		)
+		const resultEmbed = createMatchResultEmbed(confirmData.winningTeam, confirmData.ratingChanges)
 
 		await interaction.update({
 			embeds: [resultEmbed],
@@ -99,34 +73,19 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 
 		if (!matchResponse.ok) {
 			await interaction.reply({
-				content: `${vote === 'blue' ? '🔵 Blue' : '🔴 Red'}勝利に投票しました。`,
+				content: `${vote === 'BLUE' ? '🔵 Blue' : '🔴 Red'}勝利に投票しました。`,
 				flags: MessageFlags.Ephemeral,
 			})
 			return
 		}
 
-		const matchData = (await matchResponse.json()) as {
-			match: {
-				teamAssignments: Record<
-					string,
-					{
-						team: 'BLUE' | 'RED'
-						role: LolRole
-						rating: number
-					}
-				>
-				blueVotes: number
-				redVotes: number
-			}
-			votesRequired: number
-		}
+		const matchData = await matchResponse.json()
 
-		// API形式（大文字）をアプリ形式（小文字）に変換
-		const teamAssignmentsLowerCase: TeamAssignments = Object.fromEntries(
+		const teamAssignments: TeamAssignments = Object.fromEntries(
 			Object.entries(matchData.match.teamAssignments).map(([discordId, assignment]) => [
 				discordId,
 				{
-					team: assignment.team.toLowerCase() as 'blue' | 'red',
+					team: assignment.team,
 					role: assignment.role,
 					rating: assignment.rating,
 				},
@@ -134,7 +93,7 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 		)
 
 		const embed = createMatchEmbed(
-			teamAssignmentsLowerCase,
+			teamAssignments,
 			matchData.match.blueVotes,
 			matchData.match.redVotes,
 			matchData.votesRequired,
@@ -170,18 +129,7 @@ export const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>
 		return
 	}
 
-	const matchData = (await matchResponse.json()) as {
-		match: {
-			teamAssignments: Record<
-				string,
-				{
-					team: 'BLUE' | 'RED'
-					role: LolRole
-					rating: number
-				}
-			>
-		}
-	}
+	const matchData = await matchResponse.json()
 
 	// 参加者チェック
 	if (!matchData.match.teamAssignments[interaction.user.id]) {
@@ -198,7 +146,7 @@ export const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>
 	})
 
 	if (!cancelResponse.ok) {
-		const error = (await cancelResponse.json()) as { message?: string }
+		const error = await cancelResponse.json()
 		const message =
 			error.message === 'Match is not in voting state' ? 'この試合は既に終了しています。' : 'キャンセルに失敗しました。'
 
@@ -209,19 +157,18 @@ export const handleVoteCancel = async (interaction: ButtonInteraction<CacheType>
 		return
 	}
 
-	// API形式（大文字）をアプリ形式（小文字）に変換
-	const teamAssignmentsLowerCase: TeamAssignments = Object.fromEntries(
+	const teamAssignments: TeamAssignments = Object.fromEntries(
 		Object.entries(matchData.match.teamAssignments).map(([discordId, assignment]) => [
 			discordId,
 			{
-				team: assignment.team.toLowerCase() as 'blue' | 'red',
+				team: assignment.team,
 				role: assignment.role,
 				rating: assignment.rating,
 			},
 		]),
 	)
 
-	const embed = createMatchEmbed(teamAssignmentsLowerCase, 0, 0, 6, 'cancelled')
+	const embed = createMatchEmbed(teamAssignments, 0, 0, 6, 'cancelled')
 
 	await interaction.update({
 		embeds: [embed],

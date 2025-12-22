@@ -22,6 +22,16 @@ export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<
 			const pendingRoles = pendingRoleSelections.get(pendingKey)
 
 			if (pendingRoles) {
+				// Check if same role is already selected for the other type
+				const otherRole = roleType === 'main' ? pendingRoles.subRole : pendingRoles.mainRole
+				if (otherRole === selectedValue) {
+					await interaction.reply({
+						content: 'メインロールとサブロールに同じロールは選択できません。',
+						flags: MessageFlags.Ephemeral,
+					})
+					return
+				}
+
 				if (roleType === 'main') {
 					pendingRoles.mainRole = selectedValue
 				} else {

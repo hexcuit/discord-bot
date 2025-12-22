@@ -4,7 +4,6 @@ import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from './constants'
 import { createButtons, createClosedEmbed, createEmbed, createFullEmbed } from './embeds'
-import type { Participant } from './types'
 
 export const handleJoin = async (
 	interaction: ButtonInteraction<CacheType>,
@@ -19,13 +18,13 @@ export const handleJoin = async (
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { error?: string }
+		const error = await response.json()
 		const message =
-			error.error === 'Already joined'
+			error.message === 'Already joined'
 				? '既に参加しています。'
-				: error.error === 'Recruitment is full'
+				: error.message === 'Queue is full'
 					? '定員に達しています。'
-					: error.error === 'Recruitment is not open'
+					: error.message === 'Queue is not open'
 						? '募集は終了しています。'
 						: '参加に失敗しました。'
 
@@ -104,20 +103,14 @@ export const handleLeave = async (
 	})
 
 	if (!response.ok) {
-		const error = (await response.json()) as { message?: string }
-		const message = error.message === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
+		const error = await response.json()
+		const message = error.message === 'Player not found' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
 			flags: MessageFlags.Ephemeral,
 		})
 		return
-	}
-
-	const data = (await response.json()) as {
-		success: boolean
-		count: number
-		players: Participant[]
 	}
 
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
@@ -133,16 +126,10 @@ export const handleLeave = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			anonymous: boolean
-			creatorId: string
-			startTime: string | null
-		}
-	}
+	const recruitData = await recruitResponse.json()
 
 	const isAnonymous = recruitData.queue.anonymous
-	const participantIds = data.players.map((p) => p.discordId)
+	const participantIds = recruitData.players.map((p) => p.discordId)
 
 	const embed = createEmbed(
 		isAnonymous,
@@ -179,15 +166,7 @@ export const handleForceStart = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			anonymous: boolean
-			creatorId: string
-			startTime: string | null
-			status: string
-		}
-		players: { discordId: string }[]
-	}
+	const recruitData = await recruitResponse.json()
 
 	// 主催者チェック
 	if (recruitData.queue.creatorId !== interaction.user.id) {
@@ -269,15 +248,7 @@ export const handleClose = async (
 		return
 	}
 
-	const recruitData = (await recruitResponse.json()) as {
-		queue: {
-			anonymous: boolean
-			creatorId: string
-			startTime: string | null
-			status: string
-		}
-		players: { discordId: string }[]
-	}
+	const recruitData = await recruitResponse.json()
 
 	// 主催者チェック
 	if (recruitData.queue.creatorId !== interaction.user.id) {
