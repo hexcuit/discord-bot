@@ -7,9 +7,9 @@ import { handleClose, handleForceStart, handleJoin, handleLeave } from './shared
 import { parseCustomId } from './shared/utils'
 
 export const handleButton = async (interaction: ButtonInteraction<CacheType>) => {
-	const { action, recruitmentId, originalMessageId } = parseCustomId(interaction.customId)
+	const { action, queueId, originalMessageId } = parseCustomId(interaction.customId)
 
-	if (!recruitmentId) {
+	if (!queueId) {
 		await interaction.reply({
 			content: '無効な操作です。',
 			flags: MessageFlags.Ephemeral,
@@ -25,41 +25,41 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 		switch (action) {
 			// Normal queue (create/anonymous)
 			case 'join':
-				await handleJoin(interaction, recruitmentId, existingDescription)
+				await handleJoin(interaction, queueId, existingDescription)
 				break
 			case 'leave':
-				await handleLeave(interaction, recruitmentId, existingDescription)
+				await handleLeave(interaction, queueId, existingDescription)
 				break
 			case 'force_start':
-				await handleForceStart(interaction, recruitmentId, existingDescription)
+				await handleForceStart(interaction, queueId, existingDescription)
 				break
 			case 'close':
-				await handleClose(interaction, recruitmentId, existingDescription)
+				await handleClose(interaction, queueId, existingDescription)
 				break
 
 			// Ranked queue
 			case 'rank_join':
-				await handleRankJoin(interaction, recruitmentId)
+				await handleRankJoin(interaction, queueId)
 				break
 			case 'confirm_rank_join':
-				await handleConfirmRankJoin(interaction, recruitmentId, originalMessageId)
+				await handleConfirmRankJoin(interaction, queueId, originalMessageId)
 				break
 			case 'rank_leave':
-				await handleRankLeave(interaction, recruitmentId, existingDescription)
+				await handleRankLeave(interaction, queueId, existingDescription)
 				break
 			case 'rank_force':
-				await handleRankForce(interaction, recruitmentId, existingDescription)
+				await handleRankForce(interaction, queueId, existingDescription)
 				break
 
 			// Vote
 			case 'vote_blue':
-				await handleVote(interaction, recruitmentId, 'blue')
+				await handleVote(interaction, queueId, 'blue')
 				break
 			case 'vote_red':
-				await handleVote(interaction, recruitmentId, 'red')
+				await handleVote(interaction, queueId, 'red')
 				break
 			case 'vote_cancel':
-				await handleVoteCancel(interaction, recruitmentId)
+				await handleVoteCancel(interaction, queueId)
 				break
 		}
 	} catch (error) {

@@ -7,8 +7,9 @@ import { createButtons, createEmbed } from '../shared/embeds'
 export const executeAnonymous = async (interaction: ChatInputCommandInteraction, guildId: string) => {
 	const description = interaction.options.getString('description')
 	const startTime = interaction.options.getString('start_time')
-	const recruitmentId = crypto.randomUUID()
+	const queueId = crypto.randomUUID()
 
+	// Defer as ephemeral so success/error messages are only visible to the user
 	await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 	if (!interaction.channel || !interaction.channel.isSendable()) {
@@ -17,8 +18,9 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 	}
 
 	const embed = createEmbed(true, [], CAPACITY, interaction.user.id, startTime, description)
-	const disabledButtons = createButtons(recruitmentId, true)
+	const disabledButtons = createButtons(queueId, true)
 
+	// Send the recruitment message publicly via channel.send (not interaction.reply)
 	const message = await interaction.channel.send({
 		embeds: [embed],
 		components: [disabledButtons],
@@ -27,7 +29,7 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 	try {
 		const response = await apiClient.v1.queues.$post({
 			json: {
-				id: recruitmentId,
+				id: queueId,
 				guildId,
 				channelId: interaction.channelId,
 				messageId: message.id,
@@ -44,7 +46,7 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 			return
 		}
 
-		const enabledButtons = createButtons(recruitmentId, false)
+		const enabledButtons = createButtons(queueId, false)
 		await message.edit({
 			embeds: [embed],
 			components: [enabledButtons],
@@ -53,6 +55,7 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 		await interaction.editReply({ content: '匿名募集を作成しました！' })
 	} catch (error) {
 		logger.error('募集作成エラー:', error)
+		// Ignore deletion failure - message may already be deleted
 		await message.delete().catch(() => {})
 		await interaction.editReply({ content: '募集の作成に失敗しました。' })
 	}

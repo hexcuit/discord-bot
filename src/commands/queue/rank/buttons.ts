@@ -14,10 +14,10 @@ import {
 	createVoteButtons,
 } from './embeds'
 
-export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, recruitmentId: string) => {
+export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
 	// まず参加処理を行う（ロール選択前に参加させることで、update-roleが機能する）
 	const joinResponse = await apiClient.v1.queues[':id'].players.$post({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 		json: {
 			discordId: interaction.user.id,
 		},
@@ -53,7 +53,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 
 	// 募集情報取得
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -90,19 +90,19 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 		})
 
 		// チーム分け＆試合作成
-		await startRankedMatchFromFull(interaction, recruitmentId, recruitData.players)
+		await startRankedMatchFromFull(interaction, queueId, recruitData.players)
 		return
 	}
 
-	const buttons = createRankedButtons(recruitmentId, false)
+	const buttons = createRankedButtons(queueId, false)
 	await interaction.update({
 		embeds: [embed],
 		components: [buttons],
 	})
 
 	// ロール選択UIを表示
-	const mainRoleSelect = createRoleSelectMenu(recruitmentId, 'main')
-	const subRoleSelect = createRoleSelectMenu(recruitmentId, 'sub')
+	const mainRoleSelect = createRoleSelectMenu(queueId, 'main')
+	const subRoleSelect = createRoleSelectMenu(queueId, 'sub')
 	const originalMessageId = interaction.message.id
 
 	await interaction.followUp({
@@ -112,7 +112,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 			subRoleSelect,
 			new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
-					.setCustomId(`recruit:confirm_rank_join:${recruitmentId}:${originalMessageId}`)
+					.setCustomId(`queue:confirm_rank_join:${queueId}:${originalMessageId}`)
 					.setLabel('完了')
 					.setStyle(ButtonStyle.Success),
 			),
@@ -123,7 +123,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 
 export const handleConfirmRankJoin = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	originalMessageId: string | undefined,
 ) => {
 	// originalMessageIdがない場合はエラー
@@ -137,7 +137,7 @@ export const handleConfirmRankJoin = async (
 
 	// 募集情報を取得（ロール選択後の最新状態）
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -178,7 +178,7 @@ export const handleConfirmRankJoin = async (
 		recruitData.queue.startTime,
 		existingDescription,
 	)
-	const buttons = createRankedButtons(recruitmentId, false)
+	const buttons = createRankedButtons(queueId, false)
 
 	await originalMessage.edit({
 		embeds: [embed],
@@ -189,14 +189,14 @@ export const handleConfirmRankJoin = async (
 // 10人揃った時のチーム分け＆試合作成
 const startRankedMatchFromFull = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	participants: Participant[],
 ) => {
 	if (!interaction.guildId) return
 
 	// 募集終了
 	await apiClient.v1.queues[':id'].$delete({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	// チーム分け＆試合作成
@@ -274,13 +274,13 @@ const startRankedMatchFromFull = async (
 
 export const handleRankLeave = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	existingDescription: string | null,
 ) => {
 	// ランク戦キャンセル
 	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
 		param: {
-			id: recruitmentId,
+			id: queueId,
 			discordId: interaction.user.id,
 		},
 	})
@@ -303,7 +303,7 @@ export const handleRankLeave = async (
 	}
 
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -329,7 +329,7 @@ export const handleRankLeave = async (
 		recruitData.queue.startTime,
 		existingDescription,
 	)
-	const buttons = createRankedButtons(recruitmentId, false)
+	const buttons = createRankedButtons(queueId, false)
 
 	await interaction.update({
 		embeds: [embed],
@@ -339,12 +339,12 @@ export const handleRankLeave = async (
 
 export const handleRankForce = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	_existingDescription: string | null,
 ) => {
 	// ランク戦強制開始
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -393,7 +393,7 @@ export const handleRankForce = async (
 
 	// 募集終了API呼び出し
 	const closeResponse = await apiClient.v1.queues[':id'].$delete({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!closeResponse.ok) {

@@ -46,25 +46,25 @@ export const createEmbed = (
 	return embed
 }
 
-export const createButtons = (recruitmentId: string, disabled: boolean) => {
+export const createButtons = (queueId: string, disabled: boolean) => {
 	return new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
-			.setCustomId(`recruit:join:${recruitmentId}`)
+			.setCustomId(`queue:join:${queueId}`)
 			.setLabel('参加')
 			.setStyle(ButtonStyle.Success)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:leave:${recruitmentId}`)
+			.setCustomId(`queue:leave:${queueId}`)
 			.setLabel('キャンセル')
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:force_start:${recruitmentId}`)
+			.setCustomId(`queue:force_start:${queueId}`)
 			.setLabel('強制開始')
 			.setStyle(ButtonStyle.Primary)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:close:${recruitmentId}`)
+			.setCustomId(`queue:close:${queueId}`)
 			.setLabel('募集終了')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),

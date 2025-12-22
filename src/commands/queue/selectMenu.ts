@@ -5,10 +5,10 @@ import { apiClient } from '@/utils/api-client'
 import { parseCustomId } from './shared/utils'
 
 export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<CacheType>) => {
-	const { action, recruitmentId } = parseCustomId(interaction.customId)
+	const { action, queueId } = parseCustomId(interaction.customId)
 	const selectedValue = interaction.values[0] as LolRole
 
-	if (!recruitmentId || !selectedValue) {
+	if (!queueId || !selectedValue) {
 		return
 	}
 
@@ -19,7 +19,7 @@ export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<
 			// APIでロールを更新
 			await apiClient.v1.queues[':id'].players[':discordId'].$patch({
 				param: {
-					id: recruitmentId,
+					id: queueId,
 					discordId: interaction.user.id,
 				},
 				json: {

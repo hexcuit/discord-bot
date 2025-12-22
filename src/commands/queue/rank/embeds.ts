@@ -55,32 +55,32 @@ export const createRankedEmbed = (
 	return embed
 }
 
-export const createRankedButtons = (recruitmentId: string, disabled: boolean) => {
+export const createRankedButtons = (queueId: string, disabled: boolean) => {
 	return new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
-			.setCustomId(`recruit:rank_join:${recruitmentId}`)
+			.setCustomId(`queue:rank_join:${queueId}`)
 			.setLabel('参加')
 			.setStyle(ButtonStyle.Success)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:rank_leave:${recruitmentId}`)
+			.setCustomId(`queue:rank_leave:${queueId}`)
 			.setLabel('キャンセル')
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:rank_force:${recruitmentId}`)
+			.setCustomId(`queue:rank_force:${queueId}`)
 			.setLabel('強制開始')
 			.setStyle(ButtonStyle.Primary)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:close:${recruitmentId}`)
+			.setCustomId(`queue:close:${queueId}`)
 			.setLabel('募集終了')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),
 	)
 }
 
-export const createRoleSelectMenu = (recruitmentId: string, type: 'main' | 'sub') => {
+export const createRoleSelectMenu = (queueId: string, type: 'main' | 'sub') => {
 	const options = LOL_ROLES.map((role) =>
 		new StringSelectMenuOptionBuilder()
 			.setLabel(ROLE_LABELS[role])
@@ -91,7 +91,7 @@ export const createRoleSelectMenu = (recruitmentId: string, type: 'main' | 'sub'
 
 	return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
 		new StringSelectMenuBuilder()
-			.setCustomId(`recruit:select_${type}_role:${recruitmentId}`)
+			.setCustomId(`queue:select_${type}_role:${queueId}`)
 			.setPlaceholder(type === 'main' ? 'メインロールを選択' : 'サブロールを選択')
 			.addOptions(options),
 	)
@@ -156,17 +156,17 @@ export const createMatchEmbed = (
 export const createVoteButtons = (matchId: string, disabled = false) => {
 	return new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
-			.setCustomId(`recruit:vote_blue:${matchId}`)
+			.setCustomId(`queue:vote_blue:${matchId}`)
 			.setLabel('🔵 Blue勝利')
 			.setStyle(ButtonStyle.Primary)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:vote_red:${matchId}`)
+			.setCustomId(`queue:vote_red:${matchId}`)
 			.setLabel('🔴 Red勝利')
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`recruit:vote_cancel:${matchId}`)
+			.setCustomId(`queue:vote_cancel:${matchId}`)
 			.setLabel('キャンセル')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),

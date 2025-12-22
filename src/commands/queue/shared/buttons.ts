@@ -8,11 +8,11 @@ import type { Participant } from './types'
 
 export const handleJoin = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	existingDescription: string | null,
 ) => {
 	const response = await apiClient.v1.queues[':id'].players.$post({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 		json: {
 			discordId: interaction.user.id,
 		},
@@ -40,7 +40,7 @@ export const handleJoin = async (
 
 	// 募集情報取得
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -82,7 +82,7 @@ export const handleJoin = async (
 			recruitData.queue.startTime,
 			existingDescription,
 		)
-		const buttons = createButtons(recruitmentId, false)
+		const buttons = createButtons(queueId, false)
 
 		await interaction.update({
 			embeds: [embed],
@@ -93,12 +93,12 @@ export const handleJoin = async (
 
 export const handleLeave = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	existingDescription: string | null,
 ) => {
 	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
 		param: {
-			id: recruitmentId,
+			id: queueId,
 			discordId: interaction.user.id,
 		},
 	})
@@ -121,7 +121,7 @@ export const handleLeave = async (
 	}
 
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -152,7 +152,7 @@ export const handleLeave = async (
 		recruitData.queue.startTime,
 		existingDescription,
 	)
-	const buttons = createButtons(recruitmentId, false)
+	const buttons = createButtons(queueId, false)
 
 	await interaction.update({
 		embeds: [embed],
@@ -162,12 +162,12 @@ export const handleLeave = async (
 
 export const handleForceStart = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	existingDescription: string | null,
 ) => {
 	// 募集情報取得
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -218,7 +218,7 @@ export const handleForceStart = async (
 
 	// 募集終了API呼び出し（物理削除）
 	const closeResponse = await apiClient.v1.queues[':id'].$delete({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -252,12 +252,12 @@ export const handleForceStart = async (
 
 export const handleClose = async (
 	interaction: ButtonInteraction<CacheType>,
-	recruitmentId: string,
+	queueId: string,
 	existingDescription: string | null,
 ) => {
 	// 募集情報取得
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -299,7 +299,7 @@ export const handleClose = async (
 
 	// 募集終了API呼び出し（物理削除）
 	const closeResponse = await apiClient.v1.queues[':id'].$delete({
-		param: { id: recruitmentId },
+		param: { id: queueId },
 	})
 
 	if (!closeResponse.ok) {
