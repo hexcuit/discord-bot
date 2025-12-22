@@ -37,8 +37,8 @@ export const createRankedEmbed = (
 		participants.length > 0
 			? participants
 					.map((p) => {
-						const mainRole = formatRole(p.mainRole as LolRole | null)
-						const subRole = formatRole(p.subRole as LolRole | null)
+						const mainRole = formatRole(p.mainRole)
+						const subRole = formatRole(p.subRole)
 						return `<@${p.discordId}> - メイン: ${mainRole} / サブ: ${subRole}`
 					})
 					.join('\n')
