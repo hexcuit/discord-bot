@@ -12,26 +12,8 @@ import { ROLE_LABELS } from '../shared/constants'
 import type { Participant, TeamAssignments } from '../shared/types'
 import { formatRole } from '../shared/utils'
 
-export const createRankedEmbed = (
-	participants: Participant[],
-	capacity: number,
-	creatorId: string,
-	startTime?: string | null,
-	description?: string | null,
-) => {
+export const createRankedEmbed = (participants: Participant[], capacity: number, creatorId: string) => {
 	const embed = new EmbedBuilder().setTitle('🏆 ランク戦募集').setColor(COLORS.primary)
-
-	if (description) {
-		embed.setDescription(description)
-	}
-
-	if (startTime) {
-		embed.addFields({
-			name: '開始時間',
-			value: startTime,
-			inline: true,
-		})
-	}
 
 	const participantList =
 		participants.length > 0

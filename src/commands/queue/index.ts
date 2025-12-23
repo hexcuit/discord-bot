@@ -11,38 +11,12 @@ export default {
 		.setName('queue')
 		.setDescription('カスタムゲームの募集を作成します（定員10人）')
 		.setContexts(InteractionContextType.Guild)
+		.addSubcommand((subcommand) => subcommand.setName('create').setDescription('通常募集を作成（参加者名を表示）'))
 		.addSubcommand((subcommand) =>
-			subcommand
-				.setName('create')
-				.setDescription('通常募集を作成（参加者名を表示）')
-				.addStringOption((option) =>
-					option.setName('description').setDescription('募集要項（例: ワイワイやりましょう！）').setRequired(false),
-				)
-				.addStringOption((option) =>
-					option.setName('start_time').setDescription('開始時間（例: 21:00）').setRequired(false),
-				),
+			subcommand.setName('anonymous').setDescription('匿名募集を作成（参加者名を非表示にし、人数のみ表示）'),
 		)
 		.addSubcommand((subcommand) =>
-			subcommand
-				.setName('anonymous')
-				.setDescription('匿名募集を作成（参加者名を非表示にし、人数のみ表示）')
-				.addStringOption((option) =>
-					option.setName('description').setDescription('募集要項（例: ワイワイやりましょう！）').setRequired(false),
-				)
-				.addStringOption((option) =>
-					option.setName('start_time').setDescription('開始時間（例: 21:00）').setRequired(false),
-				),
-		)
-		.addSubcommand((subcommand) =>
-			subcommand
-				.setName('rank')
-				.setDescription('ランク戦募集を作成（ロール選択あり、10人で自動チーム分け）')
-				.addStringOption((option) =>
-					option.setName('description').setDescription('募集要項（例: ワイワイやりましょう！）').setRequired(false),
-				)
-				.addStringOption((option) =>
-					option.setName('start_time').setDescription('開始時間（例: 21:00）').setRequired(false),
-				),
+			subcommand.setName('rank').setDescription('ランク戦募集を作成（ロール選択あり、10人で自動チーム分け）'),
 		),
 
 	execute: async (interaction) => {

@@ -2,28 +2,9 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'disc
 import { COLORS } from '@/config'
 import { CAPACITY } from './constants'
 
-export const createEmbed = (
-	anonymous: boolean,
-	participants: string[],
-	capacity: number,
-	creatorId: string,
-	startTime?: string | null,
-	description?: string | null,
-) => {
+export const createEmbed = (anonymous: boolean, participants: string[], capacity: number, creatorId: string) => {
 	const title = anonymous ? 'カスタム募集（匿名）' : 'カスタム募集'
 	const embed = new EmbedBuilder().setTitle(title).setColor(COLORS.success)
-
-	if (description) {
-		embed.setDescription(description)
-	}
-
-	if (startTime) {
-		embed.addFields({
-			name: '開始時間',
-			value: startTime,
-			inline: true,
-		})
-	}
 
 	if (anonymous) {
 		embed.addFields({

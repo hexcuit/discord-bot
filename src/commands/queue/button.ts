@@ -17,24 +17,20 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 		return
 	}
 
-	// 既存のEmbedからdescriptionを取得して維持
-	const existingEmbed = interaction.message.embeds[0]
-	const existingDescription = existingEmbed?.description ?? null
-
 	try {
 		switch (action) {
 			// Normal queue (create/anonymous)
 			case 'join':
-				await handleJoin(interaction, queueId, existingDescription)
+				await handleJoin(interaction, queueId)
 				break
 			case 'leave':
-				await handleLeave(interaction, queueId, existingDescription)
+				await handleLeave(interaction, queueId)
 				break
 			case 'force_start':
-				await handleForceStart(interaction, queueId, existingDescription)
+				await handleForceStart(interaction, queueId)
 				break
 			case 'close':
-				await handleClose(interaction, queueId, existingDescription)
+				await handleClose(interaction, queueId)
 				break
 
 			// Ranked queue
@@ -45,10 +41,10 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 				await handleConfirmRankJoin(interaction, queueId, originalMessageId)
 				break
 			case 'rank_leave':
-				await handleRankLeave(interaction, queueId, existingDescription)
+				await handleRankLeave(interaction, queueId)
 				break
 			case 'rank_force':
-				await handleRankForce(interaction, queueId, existingDescription)
+				await handleRankForce(interaction, queueId)
 				break
 
 			// Vote

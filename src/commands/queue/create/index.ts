@@ -5,11 +5,6 @@ import { CAPACITY } from '../shared/constants'
 import { createButtons, createEmbed } from '../shared/embeds'
 
 export const executeCreate = async (interaction: ChatInputCommandInteraction, guildId: string) => {
-	const description = interaction.options.getString('description')
-	const startTime = interaction.options.getString('start_time')
-	const queueId = crypto.randomUUID()
-
-	// Defer as ephemeral so success/error messages are only visible to the user
 	await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 	if (!interaction.channel || !interaction.channel.isSendable()) {
@@ -17,25 +12,19 @@ export const executeCreate = async (interaction: ChatInputCommandInteraction, gu
 		return
 	}
 
-	const embed = createEmbed(false, [], CAPACITY, interaction.user.id, startTime, description)
-	const disabledButtons = createButtons(queueId, true)
-
-	// Send the recruitment message publicly via channel.send (not interaction.reply)
-	const message = await interaction.channel.send({
-		embeds: [embed],
-		components: [disabledButtons],
-	})
+	const embed = createEmbed(false, [], CAPACITY, interaction.user.id)
+	const message = await interaction.channel.send({ embeds: [embed] })
 
 	try {
 		const response = await apiClient.v1.queues.$post({
 			json: {
-				id: queueId,
 				guildId,
 				channelId: interaction.channelId,
 				messageId: message.id,
 				creatorId: interaction.user.id,
+				type: 'normal',
 				anonymous: false,
-				startTime: startTime || undefined,
+				capacity: CAPACITY,
 			},
 		})
 
@@ -46,16 +35,13 @@ export const executeCreate = async (interaction: ChatInputCommandInteraction, gu
 			return
 		}
 
-		const enabledButtons = createButtons(queueId, false)
-		await message.edit({
-			embeds: [embed],
-			components: [enabledButtons],
-		})
+		const { queue } = await response.json()
+		const buttons = createButtons(queue.id, false)
+		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: '募集を作成しました！' })
 	} catch (error) {
 		logger.error('募集作成エラー:', error)
-		// Ignore deletion failure - message may already be deleted
 		await message.delete().catch(() => {})
 		await interaction.editReply({ content: '募集の作成に失敗しました。' })
 	}

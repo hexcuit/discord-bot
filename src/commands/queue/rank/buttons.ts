@@ -174,15 +174,8 @@ export const handleConfirmRankJoin = async (
 	}
 
 	const originalMessage = await channel.messages.fetch(originalMessageId)
-	const existingDescription = originalMessage.embeds[0]?.description ?? null
 
-	const embed = createRankedEmbed(
-		recruitData.players,
-		CAPACITY,
-		recruitData.queue.creatorId,
-		recruitData.queue.startTime,
-		existingDescription,
-	)
+	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
 
 	// If queue is now full, start the match
 	if (joinData.isFull && interaction.guildId) {
@@ -279,11 +272,7 @@ const startRankedMatchFromFull = async (
 	}
 }
 
-export const handleRankLeave = async (
-	interaction: ButtonInteraction<CacheType>,
-	queueId: string,
-	existingDescription: string | null,
-) => {
+export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
 	// ランク戦キャンセル
 	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
 		param: {
@@ -318,13 +307,7 @@ export const handleRankLeave = async (
 
 	const recruitData = await recruitResponse.json()
 
-	const embed = createRankedEmbed(
-		recruitData.players,
-		CAPACITY,
-		recruitData.queue.creatorId,
-		recruitData.queue.startTime,
-		existingDescription,
-	)
+	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
 	const buttons = createRankedButtons(queueId, false)
 
 	await interaction.update({
@@ -333,11 +316,7 @@ export const handleRankLeave = async (
 	})
 }
 
-export const handleRankForce = async (
-	interaction: ButtonInteraction<CacheType>,
-	queueId: string,
-	_existingDescription: string | null,
-) => {
+export const handleRankForce = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
 	// ランク戦強制開始
 	const recruitResponse = await apiClient.v1.queues[':id'].$get({
 		param: { id: queueId },
