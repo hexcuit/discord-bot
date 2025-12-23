@@ -2,6 +2,6 @@
 // Do not edit manually
 
 export { default as queue } from './queue'
-export { default as rank } from './rank'
+export { default as ranking } from './ranking'
 export { default as register } from './register'
 export { default as team } from './team'

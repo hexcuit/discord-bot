@@ -7,7 +7,7 @@ import { generateStatsCard, type MatchHistoryItem } from '@/utils/stats-card'
 
 export default {
 	command: new SlashCommandBuilder()
-		.setName('rank')
+		.setName('ranking')
 		.setDescription('サーバー内ランク情報を表示します')
 		.setContexts(InteractionContextType.Guild)
 		.addSubcommand((subcommand) =>
