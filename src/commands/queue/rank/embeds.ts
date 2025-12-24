@@ -37,32 +37,32 @@ export const createRankedEmbed = (participants: Participant[], capacity: number,
 	return embed
 }
 
-export const createRankedButtons = (queueId: string, disabled: boolean) => {
+export const createRankedButtons = (guildId: string, queueId: string, disabled: boolean) => {
 	return new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
-			.setCustomId(`queue:rank_join:${queueId}`)
+			.setCustomId(`queue:rank_join:${guildId}:${queueId}`)
 			.setLabel('参加')
 			.setStyle(ButtonStyle.Success)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`queue:rank_leave:${queueId}`)
+			.setCustomId(`queue:rank_leave:${guildId}:${queueId}`)
 			.setLabel('退出')
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`queue:rank_force:${queueId}`)
+			.setCustomId(`queue:rank_force:${guildId}:${queueId}`)
 			.setLabel('強制開始')
 			.setStyle(ButtonStyle.Primary)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`queue:close:${queueId}`)
+			.setCustomId(`queue:rank_close:${guildId}:${queueId}`)
 			.setLabel('募集終了')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),
 	)
 }
 
-export const createRoleSelectMenu = (queueId: string, type: 'main' | 'sub') => {
+export const createRoleSelectMenu = (guildId: string, queueId: string, type: 'main' | 'sub') => {
 	const options = LOL_ROLES.map((role) =>
 		new StringSelectMenuOptionBuilder()
 			.setLabel(ROLE_LABELS[role])
@@ -73,7 +73,7 @@ export const createRoleSelectMenu = (queueId: string, type: 'main' | 'sub') => {
 
 	return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
 		new StringSelectMenuBuilder()
-			.setCustomId(`queue:select_${type}_role:${queueId}`)
+			.setCustomId(`queue:select_${type}_role:${guildId}:${queueId}`)
 			.setPlaceholder(type === 'main' ? 'メインロールを選択' : 'サブロールを選択')
 			.addOptions(options),
 	)

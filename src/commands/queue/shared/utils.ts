@@ -7,8 +7,9 @@ export const parseCustomId = (customId: string) => {
 	return {
 		command: parts[0],
 		action: parts[1],
-		queueId: parts[2],
-		originalMessageId: parts[3],
+		guildId: parts[2],
+		queueId: parts[3],
+		originalMessageId: parts[4],
 	}
 }
 

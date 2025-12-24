@@ -16,9 +16,9 @@ export const executeRank = async (interaction: ChatInputCommandInteraction, guil
 	const message = await interaction.channel.send({ embeds: [embed] })
 
 	try {
-		const response = await apiClient.v1.queues.$post({
+		const response = await apiClient.v1.guilds[':guildId'].queues.$post({
+			param: { guildId },
 			json: {
-				guildId,
 				channelId: interaction.channelId,
 				messageId: message.id,
 				creatorId: interaction.user.id,
@@ -36,7 +36,7 @@ export const executeRank = async (interaction: ChatInputCommandInteraction, guil
 		}
 
 		const { queue } = await response.json()
-		const buttons = createRankedButtons(queue.id, false)
+		const buttons = createRankedButtons(guildId, queue.id, false)
 		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: 'ランク戦募集を作成しました！' })

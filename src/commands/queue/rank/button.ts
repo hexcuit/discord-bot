@@ -18,10 +18,10 @@ import {
 // Key: `${queueId}:${discordId}`, Value: { mainRole, subRole }
 export const pendingRoleSelections = new Map<string, { mainRole: LolRole | null; subRole: LolRole | null }>()
 
-export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
+export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
 	// Check if already joined via API
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -66,8 +66,8 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 	pendingRoleSelections.set(pendingKey, { mainRole: null, subRole: null })
 
 	// Show role selection UI (do not join yet)
-	const mainRoleSelect = createRoleSelectMenu(queueId, 'main')
-	const subRoleSelect = createRoleSelectMenu(queueId, 'sub')
+	const mainRoleSelect = createRoleSelectMenu(guildId, queueId, 'main')
+	const subRoleSelect = createRoleSelectMenu(guildId, queueId, 'sub')
 	const originalMessageId = interaction.message.id
 
 	await interaction.reply({
@@ -77,7 +77,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 			subRoleSelect,
 			new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
-					.setCustomId(`queue:confirm_rank_join:${queueId}:${originalMessageId}`)
+					.setCustomId(`queue:confirm_rank_join:${guildId}:${queueId}:${originalMessageId}`)
 					.setLabel('参加確定')
 					.setStyle(ButtonStyle.Success),
 			),
@@ -88,6 +88,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 
 export const handleConfirmRankJoin = async (
 	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
 	queueId: string,
 	originalMessageId: string | undefined,
 ) => {
@@ -113,8 +114,8 @@ export const handleConfirmRankJoin = async (
 	}
 
 	// Join the queue via API with roles
-	const joinResponse = await apiClient.v1.queues[':id'].players.$post({
-		param: { id: queueId },
+	const joinResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].players.$post({
+		param: { guildId, id: queueId },
 		json: {
 			discordId: interaction.user.id,
 			mainRole: pendingRoles.mainRole ?? undefined,
@@ -147,8 +148,8 @@ export const handleConfirmRankJoin = async (
 	pendingRoleSelections.delete(pendingKey)
 
 	// Fetch updated queue info
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -178,17 +179,17 @@ export const handleConfirmRankJoin = async (
 	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
 
 	// If queue is now full, start the match
-	if (joinData.isFull && interaction.guildId) {
+	if (joinData.isFull) {
 		await originalMessage.edit({
 			embeds: [embed],
 			components: [],
 		})
 
-		await startRankedMatchFromFull(interaction, originalMessage, queueId, recruitData.players)
+		await startRankedMatchFromFull(interaction, originalMessage, guildId, queueId, recruitData.players)
 		return
 	}
 
-	const buttons = createRankedButtons(queueId, false)
+	const buttons = createRankedButtons(guildId, queueId, false)
 	await originalMessage.edit({
 		embeds: [embed],
 		components: [buttons],
@@ -199,14 +200,13 @@ export const handleConfirmRankJoin = async (
 const startRankedMatchFromFull = async (
 	interaction: ButtonInteraction<CacheType>,
 	originalMessage: Message,
+	guildId: string,
 	queueId: string,
 	participants: Participant[],
 ) => {
-	if (!interaction.guildId) return
-
 	// Close the recruitment
-	await apiClient.v1.queues[':id'].$delete({
-		param: { id: queueId },
+	await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
+		param: { guildId, id: queueId },
 	})
 
 	// Generate match ID
@@ -215,7 +215,7 @@ const startRankedMatchFromFull = async (
 	// Fetch ratings for participants
 	const discordIds = participants.map((p) => p.discordId)
 	const ratingsResponse = await apiClient.v1.guilds[':guildId'].ratings.$get({
-		param: { guildId: interaction.guildId },
+		param: { guildId },
 		query: { id: discordIds },
 	})
 
@@ -250,7 +250,7 @@ const startRankedMatchFromFull = async (
 
 	// Create match via API
 	const matchResponse = await apiClient.v1.guilds[':guildId'].matches.$post({
-		param: { guildId: interaction.guildId },
+		param: { guildId },
 		json: {
 			id: matchId,
 			channelId: interaction.channelId,
@@ -272,10 +272,11 @@ const startRankedMatchFromFull = async (
 	}
 }
 
-export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
+export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
 	// ランク戦キャンセル
-	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
+	const response = await apiClient.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete({
 		param: {
+			guildId,
 			id: queueId,
 			discordId: interaction.user.id,
 		},
@@ -292,8 +293,8 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -308,7 +309,7 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 	const recruitData = await recruitResponse.json()
 
 	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
-	const buttons = createRankedButtons(queueId, false)
+	const buttons = createRankedButtons(guildId, queueId, false)
 
 	await interaction.update({
 		embeds: [embed],
@@ -316,10 +317,10 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 	})
 }
 
-export const handleRankForce = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
+export const handleRankForce = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
 	// ランク戦強制開始
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -359,8 +360,8 @@ export const handleRankForce = async (interaction: ButtonInteraction<CacheType>,
 	}
 
 	// 募集終了API呼び出し
-	const closeResponse = await apiClient.v1.queues[':id'].$delete({
-		param: { id: queueId },
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
+		param: { guildId, id: queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -373,7 +374,7 @@ export const handleRankForce = async (interaction: ButtonInteraction<CacheType>,
 	}
 
 	// チーム分け＆試合作成
-	await startRankedMatch(interaction, recruitData.queue.guildId, recruitData.players)
+	await startRankedMatch(interaction, guildId, recruitData.players)
 }
 
 // ランク戦試合開始（チーム分け＆投票開始）

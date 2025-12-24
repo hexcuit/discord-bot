@@ -2,7 +2,7 @@ import { type ChatInputCommandInteraction, MessageFlags } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from '../shared/constants'
-import { createButtons, createEmbed } from '../shared/embeds'
+import { createButtons, createEmbed } from './embeds'
 
 export const executeAnonymous = async (interaction: ChatInputCommandInteraction, guildId: string) => {
 	await interaction.deferReply({ flags: MessageFlags.Ephemeral })
@@ -12,13 +12,13 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 		return
 	}
 
-	const embed = createEmbed(true, [], CAPACITY, interaction.user.id)
+	const embed = createEmbed(0, CAPACITY, interaction.user.id)
 	const message = await interaction.channel.send({ embeds: [embed] })
 
 	try {
-		const response = await apiClient.v1.queues.$post({
+		const response = await apiClient.v1.guilds[':guildId'].queues.$post({
+			param: { guildId },
 			json: {
-				guildId,
 				channelId: interaction.channelId,
 				messageId: message.id,
 				creatorId: interaction.user.id,
@@ -36,7 +36,7 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 		}
 
 		const { queue } = await response.json()
-		const buttons = createButtons(queue.id, false)
+		const buttons = createButtons(guildId, queue.id, false)
 		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: '匿名募集を作成しました！' })

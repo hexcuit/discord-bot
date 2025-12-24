@@ -1,7 +1,7 @@
 import { type CacheType, MessageFlags, type StringSelectMenuInteraction } from 'discord.js'
 import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
-import { pendingRoleSelections } from './rank/buttons'
+import { pendingRoleSelections } from './rank/button'
 import { parseCustomId } from './shared/utils'
 
 export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<CacheType>) => {

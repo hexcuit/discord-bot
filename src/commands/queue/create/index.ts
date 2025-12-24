@@ -2,7 +2,7 @@ import { type ChatInputCommandInteraction, MessageFlags } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from '../shared/constants'
-import { createButtons, createEmbed } from '../shared/embeds'
+import { createButtons, createEmbed } from './embeds'
 
 export const executeCreate = async (interaction: ChatInputCommandInteraction, guildId: string) => {
 	await interaction.deferReply({ flags: MessageFlags.Ephemeral })
@@ -12,13 +12,13 @@ export const executeCreate = async (interaction: ChatInputCommandInteraction, gu
 		return
 	}
 
-	const embed = createEmbed(false, [], CAPACITY, interaction.user.id)
+	const embed = createEmbed([], CAPACITY, interaction.user.id)
 	const message = await interaction.channel.send({ embeds: [embed] })
 
 	try {
-		const response = await apiClient.v1.queues.$post({
+		const response = await apiClient.v1.guilds[':guildId'].queues.$post({
+			param: { guildId },
 			json: {
-				guildId,
 				channelId: interaction.channelId,
 				messageId: message.id,
 				creatorId: interaction.user.id,
@@ -36,7 +36,7 @@ export const executeCreate = async (interaction: ChatInputCommandInteraction, gu
 		}
 
 		const { queue } = await response.json()
-		const buttons = createButtons(queue.id, false)
+		const buttons = createButtons(guildId, queue.id, false)
 		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: '募集を作成しました！' })

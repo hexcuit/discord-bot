@@ -2,12 +2,12 @@ import type { ButtonInteraction, CacheType } from 'discord.js'
 import { MessageFlags } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { CAPACITY } from './constants'
+import { CAPACITY } from '../shared/constants'
 import { createButtons, createClosedEmbed, createEmbed, createFullEmbed } from './embeds'
 
-export const handleJoin = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
-	const response = await apiClient.v1.queues[':id'].players.$post({
-		param: { id: queueId },
+export const handleJoin = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+	const response = await apiClient.v1.guilds[':guildId'].queues[':id'].players.$post({
+		param: { guildId, id: queueId },
 		json: {
 			discordId: interaction.user.id,
 		},
@@ -33,9 +33,8 @@ export const handleJoin = async (interaction: ButtonInteraction<CacheType>, queu
 
 	const data = await response.json()
 
-	// 募集情報取得
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -48,24 +47,21 @@ export const handleJoin = async (interaction: ButtonInteraction<CacheType>, queu
 	}
 
 	const recruitData = await recruitResponse.json()
-
-	const isAnonymous = recruitData.queue.anonymous
-	const participantIds = recruitData.players.map((p) => p.discordId)
+	const participantCount = recruitData.players.length
 
 	if (data.isFull) {
-		const fullEmbed = createFullEmbed(participantIds, recruitData.queue.creatorId)
+		const fullEmbed = createFullEmbed(participantCount, recruitData.queue.creatorId)
 		await interaction.update({
 			embeds: [fullEmbed],
 			components: [],
 		})
 
-		const mentions = participantIds.map((id: string) => `<@${id}>`).join(' ')
 		await interaction.followUp({
-			content: `募集完了! ${mentions}`,
+			content: '募集完了!',
 		})
 	} else {
-		const embed = createEmbed(isAnonymous, participantIds, CAPACITY, recruitData.queue.creatorId)
-		const buttons = createButtons(queueId, false)
+		const embed = createEmbed(participantCount, CAPACITY, recruitData.queue.creatorId)
+		const buttons = createButtons(guildId, queueId, false)
 
 		await interaction.update({
 			embeds: [embed],
@@ -74,9 +70,10 @@ export const handleJoin = async (interaction: ButtonInteraction<CacheType>, queu
 	}
 }
 
-export const handleLeave = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
-	const response = await apiClient.v1.queues[':id'].players[':discordId'].$delete({
+export const handleLeave = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+	const response = await apiClient.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete({
 		param: {
+			guildId,
 			id: queueId,
 			discordId: interaction.user.id,
 		},
@@ -93,8 +90,8 @@ export const handleLeave = async (interaction: ButtonInteraction<CacheType>, que
 		return
 	}
 
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -107,12 +104,10 @@ export const handleLeave = async (interaction: ButtonInteraction<CacheType>, que
 	}
 
 	const recruitData = await recruitResponse.json()
+	const participantCount = recruitData.players.length
 
-	const isAnonymous = recruitData.queue.anonymous
-	const participantIds = recruitData.players.map((p) => p.discordId)
-
-	const embed = createEmbed(isAnonymous, participantIds, CAPACITY, recruitData.queue.creatorId)
-	const buttons = createButtons(queueId, false)
+	const embed = createEmbed(participantCount, CAPACITY, recruitData.queue.creatorId)
+	const buttons = createButtons(guildId, queueId, false)
 
 	await interaction.update({
 		embeds: [embed],
@@ -120,10 +115,9 @@ export const handleLeave = async (interaction: ButtonInteraction<CacheType>, que
 	})
 }
 
-export const handleForceStart = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
-	// 募集情報取得
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+export const handleForce = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -137,7 +131,6 @@ export const handleForceStart = async (interaction: ButtonInteraction<CacheType>
 
 	const recruitData = await recruitResponse.json()
 
-	// 主催者チェック
 	if (recruitData.queue.creatorId !== interaction.user.id) {
 		await interaction.reply({
 			content: '強制開始できるのは主催者のみです。',
@@ -146,7 +139,6 @@ export const handleForceStart = async (interaction: ButtonInteraction<CacheType>
 		return
 	}
 
-	// 既に終了済みチェック
 	if (recruitData.queue.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
@@ -155,7 +147,6 @@ export const handleForceStart = async (interaction: ButtonInteraction<CacheType>
 		return
 	}
 
-	// 参加者がいない場合
 	if (recruitData.players.length === 0) {
 		await interaction.reply({
 			content: '参加者がいないため開始できません。',
@@ -164,9 +155,8 @@ export const handleForceStart = async (interaction: ButtonInteraction<CacheType>
 		return
 	}
 
-	// 募集終了API呼び出し（物理削除）
-	const closeResponse = await apiClient.v1.queues[':id'].$delete({
-		param: { id: queueId },
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
+		param: { guildId, id: queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -178,25 +168,22 @@ export const handleForceStart = async (interaction: ButtonInteraction<CacheType>
 		return
 	}
 
-	const participants = recruitData.players.map((p) => p.discordId)
-
-	const fullEmbed = createFullEmbed(participants, recruitData.queue.creatorId)
+	const participantCount = recruitData.players.length
+	const fullEmbed = createFullEmbed(participantCount, recruitData.queue.creatorId)
 
 	await interaction.update({
 		embeds: [fullEmbed],
 		components: [],
 	})
 
-	const mentions = participants.map((id: string) => `<@${id}>`).join(' ')
 	await interaction.followUp({
-		content: `強制開始! ${mentions}`,
+		content: '強制開始!',
 	})
 }
 
-export const handleClose = async (interaction: ButtonInteraction<CacheType>, queueId: string) => {
-	// 募集情報取得
-	const recruitResponse = await apiClient.v1.queues[':id'].$get({
-		param: { id: queueId },
+export const handleClose = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -210,7 +197,6 @@ export const handleClose = async (interaction: ButtonInteraction<CacheType>, que
 
 	const recruitData = await recruitResponse.json()
 
-	// 主催者チェック
 	if (recruitData.queue.creatorId !== interaction.user.id) {
 		await interaction.reply({
 			content: '募集を終了できるのは主催者のみです。',
@@ -219,7 +205,6 @@ export const handleClose = async (interaction: ButtonInteraction<CacheType>, que
 		return
 	}
 
-	// 既に終了済みチェック
 	if (recruitData.queue.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
@@ -228,9 +213,8 @@ export const handleClose = async (interaction: ButtonInteraction<CacheType>, que
 		return
 	}
 
-	// 募集終了API呼び出し（物理削除）
-	const closeResponse = await apiClient.v1.queues[':id'].$delete({
-		param: { id: queueId },
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
+		param: { guildId, id: queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -242,10 +226,8 @@ export const handleClose = async (interaction: ButtonInteraction<CacheType>, que
 		return
 	}
 
-	const isAnonymous = recruitData.queue.anonymous
-	const participants = recruitData.players.map((p) => p.discordId)
-
-	const closedEmbed = createClosedEmbed(isAnonymous, participants, CAPACITY, recruitData.queue.creatorId)
+	const participantCount = recruitData.players.length
+	const closedEmbed = createClosedEmbed(participantCount, CAPACITY, recruitData.queue.creatorId)
 
 	await interaction.update({
 		embeds: [closedEmbed],
