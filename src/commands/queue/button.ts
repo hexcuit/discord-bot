@@ -13,7 +13,7 @@ import {
 	handleJoin as handleCreateJoin,
 	handleLeave as handleCreateLeave,
 } from './create/button'
-import { handleConfirmRankJoin, handleRankForce, handleRankJoin, handleRankLeave } from './rank/button'
+import { handleConfirmRankJoin, handleRankClose, handleRankForce, handleRankJoin, handleRankLeave } from './rank/button'
 import { handleVote, handleVoteDraw } from './rank/vote'
 import { parseCustomId } from './shared/utils'
 
@@ -107,6 +107,9 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 				break
 			case 'rank_force':
 				await handleRankForce(interaction, guildId, queueId)
+				break
+			case 'rank_close':
+				await handleRankClose(interaction, guildId, queueId)
 				break
 		}
 	} catch (error) {

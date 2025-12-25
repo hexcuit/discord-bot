@@ -157,6 +157,34 @@ export const createVoteButtons = (matchId: string, disabled = false) => {
 	)
 }
 
+export const createRankedClosedEmbed = (participants: Participant[], capacity: number, creatorId: string) => {
+	const embed = new EmbedBuilder()
+		.setTitle('🏆 ランク戦募集終了')
+		.setDescription('この募集は終了しました。')
+		.setColor(COLORS.error)
+
+	const participantList =
+		participants.length > 0
+			? participants
+					.map((p) => {
+						const mainRole = formatRole(p.mainRole)
+						const subRole = formatRole(p.subRole)
+						return `<@${p.discordId}> - メイン: ${mainRole} / サブ: ${subRole}`
+					})
+					.join('\n')
+			: 'なし'
+
+	embed.addFields({
+		name: `参加者 (${participants.length}/${capacity})`,
+		value: participantList,
+		inline: false,
+	})
+
+	embed.setFooter({ text: `主催: ${creatorId}` })
+
+	return embed
+}
+
 export const createMatchResultEmbed = (
 	winningTeam: MatchResult,
 	ratingChanges: Array<{

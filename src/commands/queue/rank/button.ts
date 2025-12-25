@@ -9,6 +9,7 @@ import type { Participant } from '../shared/types'
 import {
 	createMatchEmbed,
 	createRankedButtons,
+	createRankedClosedEmbed,
 	createRankedEmbed,
 	createRoleSelectMenu,
 	createVoteButtons,
@@ -455,5 +456,62 @@ const startRankedMatch = async (
 	const mentions = participants.map((p) => `<@${p.discordId}>`).join(' ')
 	await interaction.followUp({
 		content: `🏆 チーム分けが完了しました！ ${mentions}\n\n試合終了後、勝利チームを投票してください。`,
+	})
+}
+
+export const handleRankClose = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
+		param: { guildId, id: queueId },
+	})
+
+	if (!recruitResponse.ok) {
+		logger.error('募集情報取得失敗:', recruitResponse.status)
+		await interaction.reply({
+			content: '募集情報の取得に失敗しました。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	const recruitData = await recruitResponse.json()
+
+	// 主催者または管理者のみ終了可能
+	const isCreator = recruitData.queue.creatorId === interaction.user.id
+	const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)
+
+	if (!isCreator && !isAdmin) {
+		await interaction.reply({
+			content: '募集を終了できるのは主催者またはサーバー管理者のみです。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	if (recruitData.queue.status === 'closed') {
+		await interaction.reply({
+			content: 'この募集は既に終了しています。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
+		param: { guildId, id: queueId },
+	})
+
+	if (!closeResponse.ok) {
+		logger.error('募集終了失敗:', closeResponse.status)
+		await interaction.reply({
+			content: '募集の終了に失敗しました。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	const closedEmbed = createRankedClosedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
+
+	await interaction.update({
+		embeds: [closedEmbed],
+		components: [],
 	})
 }
