@@ -1,5 +1,29 @@
 # @hexcuit/discord-bot
 
+## 0.9.0
+
+### Minor Changes
+
+- [#56](https://github.com/hexcuit/discord-bot/pull/56) [`8aa9e12`](https://github.com/hexcuit/discord-bot/commit/8aa9e1286d9a64adbf87281f98d17ef4d3be375c) Thanks [@11gather11](https://github.com/11gather11)! - feat: 管理者用コマンドを追加
+
+  - `/admin reset all` - サーバー全体のランク・マッチ履歴を初期化
+  - `/admin reset user` - 特定ユーザーのランク・マッチ履歴を初期化
+  - 確認ダイアログ付きで誤操作を防止
+
+- [#55](https://github.com/hexcuit/discord-bot/pull/55) [`86980ae`](https://github.com/hexcuit/discord-bot/commit/86980ae328a3b00b5eb8f9c96bde0ec4022ff56a) Thanks [@11gather11](https://github.com/11gather11)! - feat: ランク戦に引き分け機能を追加
+
+  - キャンセルボタンを「引き分け」ボタンに置き換え
+  - 2 段階確定ロジック: 過半数(6 票)で早期確定、全員投票後は最多得票で確定
+  - 引き分け時はレーティング変動なし
+
+### Patch Changes
+
+- [#51](https://github.com/hexcuit/discord-bot/pull/51) [`db49446`](https://github.com/hexcuit/discord-bot/commit/db49446317bc1cd00a1821fc8d624215981a09d5) Thanks [@11gather11](https://github.com/11gather11)! - chore: @hexcuit/server v1 API への移行
+
+  - 新しい v1 エンドポイント形式に対応
+  - パスパラメータ形式へ変更
+  - レスポンス型の更新に対応
+
 ## 0.8.3
 
 ### Patch Changes
