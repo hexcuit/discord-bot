@@ -28,3 +28,8 @@ jobs:
 
       - name: Type Check
         run: bun run typecheck
+
+      - name: Check generated files
+        run: |
+          bun run generate
+          git diff --exit-code src/commands/index.ts src/events/index.ts

@@ -1,13 +1,10 @@
 import { type ChatInputCommandInteraction, MessageFlags } from 'discord.js'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { CAPACITY, createButtons, createEmbed } from './shared'
+import { CAPACITY } from '../shared/constants'
+import { createButtons, createEmbed } from './embeds'
 
 export const executeAnonymous = async (interaction: ChatInputCommandInteraction, guildId: string) => {
-	const description = interaction.options.getString('description')
-	const startTime = interaction.options.getString('start_time')
-	const recruitmentId = crypto.randomUUID()
-
 	await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 	if (!interaction.channel || !interaction.channel.isSendable()) {
@@ -15,24 +12,19 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 		return
 	}
 
-	const embed = createEmbed(true, [], CAPACITY, interaction.user.id, startTime, description)
-	const disabledButtons = createButtons(recruitmentId, true)
-
-	const message = await interaction.channel.send({
-		embeds: [embed],
-		components: [disabledButtons],
-	})
+	const embed = createEmbed(0, CAPACITY, interaction.user.id)
+	const message = await interaction.channel.send({ embeds: [embed] })
 
 	try {
-		const response = await apiClient.v1.queues.$post({
+		const response = await apiClient.v1.guilds[':guildId'].queues.$post({
+			param: { guildId },
 			json: {
-				id: recruitmentId,
-				guildId,
 				channelId: interaction.channelId,
 				messageId: message.id,
 				creatorId: interaction.user.id,
+				type: 'normal',
 				anonymous: true,
-				startTime: startTime || undefined,
+				capacity: CAPACITY,
 			},
 		})
 
@@ -43,11 +35,9 @@ export const executeAnonymous = async (interaction: ChatInputCommandInteraction,
 			return
 		}
 
-		const enabledButtons = createButtons(recruitmentId, false)
-		await message.edit({
-			embeds: [embed],
-			components: [enabledButtons],
-		})
+		const { queue } = await response.json()
+		const buttons = createButtons(guildId, queue.id, false)
+		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: '匿名募集を作成しました！' })
 	} catch (error) {

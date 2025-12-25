@@ -8,7 +8,7 @@ import { getFilteredMembers } from './shared'
 interface RankInfo {
 	discordId: string
 	tier: string
-	division: string
+	division: string | null
 }
 
 interface TeamMemberWithRank {
@@ -74,10 +74,6 @@ const fetchRankData = async (
 	discordIds: string[],
 ): Promise<{ success: boolean; ranks?: RankInfo[]; error?: string }> => {
 	try {
-		if (!apiClient.v1.ranks?.$get) {
-			throw new Error('API client rank endpoint not available')
-		}
-
 		const response = await apiClient.v1.ranks.$get({
 			query: { id: discordIds },
 		})
@@ -87,7 +83,7 @@ const fetchRankData = async (
 			return { success: false, error: ERROR_MESSAGES.API_ERROR }
 		}
 
-		const data = (await response.json()) as { ranks: RankInfo[] }
+		const data = await response.json()
 		return { success: true, ranks: data.ranks }
 	} catch (error) {
 		logger.error('API呼び出しエラー:', error)

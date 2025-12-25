@@ -10,11 +10,15 @@
 		"check": "biome check",
 		"check:fix": "biome check --fix --unsafe",
 		"typecheck": "tsc --noEmit",
+		"generate": "bun scripts/generate-barrels.ts",
+		"test": "bun test",
+		"test:watch": "bun test --watch",
+		"test:coverage": "bun test --coverage",
 		"changeset": "changeset",
 		"version": "changeset version && bun i --lockfile-only"
 	},
 	"dependencies": {
-		"@hexcuit/server": "1.0.0-canary-20251221065121",
+		"@hexcuit/server": "0.9.0-canary-20251225024359",
 		"@resvg/resvg-js": "2.6.2",
 		"discord.js": "14.25.1",
 		"satori": "0.18.3"

@@ -5,7 +5,7 @@
     "": {
       "name": "@hexcuit/discord-bot",
       "dependencies": {
-        "@hexcuit/server": "1.0.0-canary-20251221065121",
+        "@hexcuit/server": "0.9.0-canary-20251225024359",
         "@resvg/resvg-js": "2.6.2",
         "discord.js": "14.25.1",
         "satori": "0.18.3",
@@ -94,7 +94,7 @@
 
     "@discordjs/ws": ["@discordjs/ws@1.2.3", "", { "dependencies": { "@discordjs/collection": "^2.1.0", "@discordjs/rest": "^2.5.1", "@discordjs/util": "^1.1.0", "@sapphire/async-queue": "^1.5.2", "@types/ws": "^8.5.10", "@vladfrangu/async_event_emitter": "^2.2.4", "discord-api-types": "^0.38.1", "tslib": "^2.6.2", "ws": "^8.17.0" } }, "sha512-wPlQDxEmlDg5IxhJPuxXr3Vy9AjYq5xCvFWGJyD7w7Np8ZGu+Mc+97LCoEc/+AYCo2IDpKioiH0/c/mj5ZR9Uw=="],
 
-    "@hexcuit/server": ["@hexcuit/server@1.0.0-canary-20251221065121", "", { "dependencies": { "@hono/zod-openapi": "1.2.0", "hono": "4.11.1" } }, "sha512-2d4hzoHCI4dvG5ds/gE8ToKQ88FOMT2vAo2xTv00N8gkmswy/w9B09JR0s2TZzh8jy64MDW9I0tVQF2yjfeKxA=="],
+    "@hexcuit/server": ["@hexcuit/server@0.9.0-canary-20251225024359", "", { "dependencies": { "@hono/zod-openapi": "1.2.0", "hono": "4.11.1" } }, "sha512-9MaEWCXnmrYT46UebP2h8sFsptBN0fkfILM9uco+95xitS+eUYfrDHZZIph4FsOpMwdxsOS0QNQT68+d4Zv5nA=="],
 
     "@hono/zod-openapi": ["@hono/zod-openapi@1.2.0", "", { "dependencies": { "@asteasolutions/zod-to-openapi": "^8.1.0", "@hono/zod-validator": "^0.7.6", "openapi3-ts": "^4.5.0" }, "peerDependencies": { "hono": ">=4.3.6", "zod": "^4.0.0" } }, "sha512-KDfHqv/Wy4elVseZXgokbHxeWuqBL+AZfqsOMpEihBMUsk/fJ+bLIi3Sf70JFVpt1Ihui8RasYrInozt7ZBDIA=="],
 

@@ -55,12 +55,12 @@ export default {
 			// APIリクエスト
 
 			//元のランクを取得
-			const resGet = await apiClient.v1.ranks.$get({
+			const currentRankResponse = await apiClient.v1.ranks.$get({
 				query: { id: interaction.user.id },
 			})
 
-			if (!resGet.ok) {
-				logger.error('APIリクエスト失敗:', resGet.status, resGet.statusText)
+			if (!currentRankResponse.ok) {
+				logger.error('APIリクエスト失敗:', currentRankResponse.status, currentRankResponse.statusText)
 				await interaction.reply({
 					content: '登録中にエラーが発生しました。後でもう一度お試しください。',
 					flags: MessageFlags.Ephemeral,
@@ -68,17 +68,10 @@ export default {
 				return
 			}
 
-			const dataGet = (await resGet.json()).ranks[0]
-			if (!dataGet) {
-				await interaction.reply({
-					content: '現在のランク情報が取得できません。先にランクを登録してください。',
-					flags: MessageFlags.Ephemeral,
-				})
-				return
-			}
+			const currentRank = (await currentRankResponse.json()).ranks[0]
 
-			// 新しいランクを登録
-			const res = await apiClient.v1.ranks[':discordId'].$put({
+			// ランクを登録/更新
+			const updateResponse = await apiClient.v1.ranks[':discordId'].$put({
 				param: { discordId: interaction.user.id },
 				json: {
 					tier,
@@ -86,8 +79,8 @@ export default {
 				},
 			})
 
-			if (!res.ok) {
-				logger.error('APIリクエスト失敗:', res.status, res.statusText)
+			if (!updateResponse.ok) {
+				logger.error('APIリクエスト失敗:', updateResponse.status, updateResponse.statusText)
 				await interaction.reply({
 					content: '登録中にエラーが発生しました。後でもう一度お試しください。',
 					flags: MessageFlags.Ephemeral,
@@ -95,30 +88,39 @@ export default {
 				return
 			}
 
-			const oldEmoji = RANK_EMOJI[dataGet.tier as keyof typeof RANK_EMOJI] || ''
-			const newEmoji = RANK_EMOJI[tier as keyof typeof RANK_EMOJI] || ''
-
+			const newEmoji = RANK_EMOJI[tier] || ''
 			const embedMessage = new EmbedBuilder()
 				.setTitle('ランク登録完了')
 				.setColor(COLORS.success)
-				.addFields(
+				.setThumbnail(interaction.user.displayAvatarURL())
+
+			if (currentRank) {
+				// 更新: Old → New を表示
+				const oldEmoji = RANK_EMOJI[currentRank.tier] || ''
+				embedMessage.addFields(
 					{
 						name: 'Old Rank',
-						value: `${oldEmoji} ${dataGet.tier} ${dataGet.division}`,
+						value: `${oldEmoji} ${currentRank.tier} ${currentRank.division ?? ''}`.trim(),
 						inline: true,
 					},
 					{
-						name: String.fromCodePoint(8203),
+						name: '\u200B',
 						value: '➤',
 						inline: true,
 					},
 					{
 						name: 'New Rank',
-						value: `${newEmoji} ${tier} ${division}`,
+						value: `${newEmoji} ${tier} ${division ?? ''}`.trim(),
 						inline: true,
 					},
 				)
-				.setThumbnail(interaction.user.displayAvatarURL())
+			} else {
+				// 新規登録
+				embedMessage.addFields({
+					name: 'Rank',
+					value: `${newEmoji} ${tier} ${division ?? ''}`.trim(),
+				})
+			}
 
 			await interaction.reply({
 				embeds: [embedMessage],

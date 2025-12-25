@@ -1,5 +1,5 @@
-import { Glob } from 'bun'
 import { Collection } from 'discord.js'
+import * as commands from '@/commands'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 
@@ -63,69 +63,37 @@ const isValidCommand = (cmd: unknown): cmd is Command => {
 	return true
 }
 
-type LoadResult = {
-	file: string
-	command: Command | null
-	commandName?: string
-	isDuplicate: boolean
-	error?: unknown
-}
-
-export const loadCommands = async (): Promise<Collection<string, Command>> => {
+export const loadCommands = (): Collection<string, Command> => {
 	const collection = new Collection<string, Command>()
-	const glob = new Glob('*/index.{js,ts}')
-	const dir = `${import.meta.dir}/../commands`
-
-	const commandFiles = await Array.fromAsync(glob.scan(dir))
-
-	const loadResults = await Promise.all(
-		commandFiles.map(async (file): Promise<LoadResult> => {
-			try {
-				const commandModule = await import(`${dir}/${file}`)
-				const command = commandModule.default
-
-				if (!command) {
-					logger.error(`Command file ${file} does not export a default command`)
-					return { file, command: null, isDuplicate: false }
-				}
-
-				if (!isValidCommand(command)) {
-					logger.error(`Invalid command structure: ${file}`)
-					return { file, command: null, isDuplicate: false }
-				}
-
-				const commandName = command.command.name
-				const isDuplicate = collection.has(commandName)
-
-				if (isDuplicate) {
-					logger.error(`Duplicate command name "${commandName}" found in ${file}`)
-					return { file, command, commandName, isDuplicate: true }
-				}
-
-				return { file, command, commandName, isDuplicate: false }
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : String(error)
-				logger.error(`Failed to load command ${file}:`, errorMessage)
-				return { file, command: null, isDuplicate: false, error }
-			}
-		}),
-	)
+	const commandList = Object.values(commands)
 
 	let loadedCount = 0
 	let failedCount = 0
 	const duplicateCommands: string[] = []
 
-	loadResults.forEach((result) => {
-		if (result.command && result.commandName && !result.isDuplicate) {
-			collection.set(result.commandName, result.command)
-			loadedCount++
-		} else {
+	for (const command of commandList) {
+		if (!command) {
 			failedCount++
-			if (result.isDuplicate && result.commandName) {
-				duplicateCommands.push(result.commandName)
-			}
+			continue
 		}
-	})
+
+		if (!isValidCommand(command)) {
+			logger.error('Invalid command structure')
+			failedCount++
+			continue
+		}
+
+		const commandName = command.command.name
+		if (collection.has(commandName)) {
+			logger.error(`Duplicate command name "${commandName}"`)
+			duplicateCommands.push(commandName)
+			failedCount++
+			continue
+		}
+
+		collection.set(commandName, command)
+		loadedCount++
+	}
 
 	logger.info(`Commands loaded: ${loadedCount} succeeded, ${failedCount} failed`)
 
@@ -133,7 +101,7 @@ export const loadCommands = async (): Promise<Collection<string, Command>> => {
 		logger.warn(`Duplicate command names found: ${duplicateCommands.join(', ')}`)
 	}
 
-	if (loadedCount === 0 && commandFiles.length > 0) {
+	if (loadedCount === 0 && commandList.length > 0) {
 		logger.warn('No commands loaded successfully. Check command file structure and exports.')
 	}
 

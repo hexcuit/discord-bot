@@ -6,22 +6,44 @@ area/lib:
     - any-glob-to-any-file:
       - src/lib/**
 
-area/services:
-  - changed-files:
-    - any-glob-to-any-file:
-      - src/services/**
-
 area/commands:
   - changed-files:
     - any-glob-to-any-file:
       - src/commands/**
 
+area/events:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/events/**
+
+area/handlers:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/handlers/**
+
+area/types:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/types/**
+
+area/utils:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/utils/**
+
+area/constants:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/constants/**
+
 area/config:
   - changed-files:
     - any-glob-to-any-file:
       - src/config/**
-      - '*.config.js'
       - tsconfig.json
+      - biome.jsonc
+      - bunfig.toml
+      - lefthook.json
 
 area/workflows:
   - changed-files:
@@ -34,23 +56,9 @@ type/docs:
   - changed-files:
     - any-glob-to-any-file:
       - '**/*.md'
-      - CLAUDE.md
 
 type/dependencies:
   - changed-files:
     - any-glob-to-any-file:
       - package.json
-      - bun.lockb
-
-# Service labels
-service/twitch:
-  - changed-files:
-    - any-glob-to-any-file:
-      - src/services/twitch.ts
-      - src/lib/twitch.ts
-
-service/youtube:
-  - changed-files:
-    - any-glob-to-any-file:
-      - src/services/youtube.ts
-      - src/lib/youtube.ts
+      - bun.lock
