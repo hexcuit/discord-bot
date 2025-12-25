@@ -1,5 +1,5 @@
 ---
-"discord-bot": minor
+"@hexcuit/discord-bot": minor
 ---
 
 feat: ランク戦に引き分け機能を追加
