@@ -14,7 +14,7 @@ import {
 	handleLeave as handleCreateLeave,
 } from './create/button'
 import { handleConfirmRankJoin, handleRankForce, handleRankJoin, handleRankLeave } from './rank/button'
-import { handleVote, handleVoteCancel } from './rank/vote'
+import { handleVote, handleVoteDraw } from './rank/vote'
 import { parseCustomId } from './shared/utils'
 
 export const handleButton = async (interaction: ButtonInteraction<CacheType>) => {
@@ -42,8 +42,8 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 				case 'vote_red':
 					await handleVote(interaction, matchId, 'RED')
 					break
-				case 'vote_cancel':
-					await handleVoteCancel(interaction, matchId)
+				case 'vote_draw':
+					await handleVoteDraw(interaction, matchId)
 					break
 			}
 		} catch (error) {

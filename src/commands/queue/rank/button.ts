@@ -260,7 +260,7 @@ const startRankedMatchFromFull = async (
 	})
 
 	if (matchResponse.ok && originalMessage.channel.isSendable()) {
-		const matchEmbed = createMatchEmbed(teamAssignments, 0, 0, 6)
+		const matchEmbed = createMatchEmbed(teamAssignments, 0, 0, 0, 6)
 		const voteButtons = createVoteButtons(matchId)
 
 		const mentions = participants.map((p) => `<@${p.discordId}>`).join(' ')
@@ -444,7 +444,7 @@ const startRankedMatch = async (
 	}
 
 	// 投票UI表示
-	const embed = createMatchEmbed(teamAssignments, 0, 0, 6)
+	const embed = createMatchEmbed(teamAssignments, 0, 0, 0, 6)
 	const buttons = createVoteButtons(matchId)
 
 	await interaction.update({

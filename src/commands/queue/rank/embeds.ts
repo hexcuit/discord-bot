@@ -7,7 +7,7 @@ import {
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
 import { COLORS, ROLE_EMOJI } from '@/config'
-import { LOL_ROLES, type LolRole, type LolTeam } from '@/constants'
+import { LOL_ROLES, type LolRole, type LolTeam, type MatchResult } from '@/constants'
 import { ROLE_LABELS } from '../shared/constants'
 import type { Participant, TeamAssignments } from '../shared/types'
 import { formatRole } from '../shared/utils'
@@ -83,6 +83,7 @@ export const createMatchEmbed = (
 	teamAssignments: TeamAssignments,
 	blueVotes: number,
 	redVotes: number,
+	drawVotes: number,
 	votesRequired: number,
 	status: 'voting' | 'confirmed' | 'cancelled' = 'voting',
 ) => {
@@ -125,9 +126,10 @@ export const createMatchEmbed = (
 	)
 
 	if (status === 'voting') {
+		const totalVotes = blueVotes + redVotes + drawVotes
 		embed.addFields({
-			name: '投票状況',
-			value: `🔵 Blue勝利: ${blueVotes}票 / 🔴 Red勝利: ${redVotes}票\n(${votesRequired}票で確定)`,
+			name: `投票状況 (${totalVotes}/10)`,
+			value: `🔵 Blue勝利: ${blueVotes}票\n🔴 Red勝利: ${redVotes}票\n⚪ 引き分け: ${drawVotes}票\n(${votesRequired}票で早期確定 / 全員投票で最多得票確定)`,
 			inline: false,
 		})
 	}
@@ -148,15 +150,15 @@ export const createVoteButtons = (matchId: string, disabled = false) => {
 			.setStyle(ButtonStyle.Danger)
 			.setDisabled(disabled),
 		new ButtonBuilder()
-			.setCustomId(`queue:vote_cancel:${matchId}`)
-			.setLabel('キャンセル')
+			.setCustomId(`queue:vote_draw:${matchId}`)
+			.setLabel('⚪ 引き分け')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),
 	)
 }
 
 export const createMatchResultEmbed = (
-	winningTeam: LolTeam,
+	winningTeam: MatchResult,
 	ratingChanges: Array<{
 		discordId: string
 		team: LolTeam
@@ -169,15 +171,23 @@ export const createMatchResultEmbed = (
 	const blueChanges = ratingChanges.filter((r) => r.team === 'BLUE')
 	const redChanges = ratingChanges.filter((r) => r.team === 'RED')
 
+	const isDraw = winningTeam === 'DRAW'
+
 	const formatChange = (r: (typeof ratingChanges)[0]) => {
 		const changeStr = r.change >= 0 ? `+${r.change}` : `${r.change}`
-		const winLose = r.team === winningTeam ? '🏆' : ''
+		const winLose = isDraw ? '' : r.team === winningTeam ? '🏆' : ''
 		return `${winLose} <@${r.discordId}>: ${r.ratingBefore} → ${r.ratingAfter} (${changeStr})`
 	}
 
+	const title = isDraw
+		? '🏆 試合結果 - 引き分け'
+		: `🏆 試合結果 - ${winningTeam === 'BLUE' ? '🔵 Blue' : '🔴 Red'} チーム勝利！`
+
+	const color = isDraw ? COLORS.primary : winningTeam === 'BLUE' ? COLORS.blue : COLORS.red
+
 	const embed = new EmbedBuilder()
-		.setTitle(`🏆 試合結果 - ${winningTeam === 'BLUE' ? '🔵 Blue' : '🔴 Red'} チーム勝利！`)
-		.setColor(winningTeam === 'BLUE' ? COLORS.blue : COLORS.red)
+		.setTitle(title)
+		.setColor(color)
 		.addFields(
 			{
 				name: '🔵 Blue Team',
@@ -190,6 +200,10 @@ export const createMatchResultEmbed = (
 				inline: true,
 			},
 		)
+
+	if (isDraw) {
+		embed.setFooter({ text: 'レーティング変動はありません' })
+	}
 
 	return embed
 }
