@@ -58,11 +58,10 @@ jobs:
       - name: Check for canary dependencies
         if: steps.version_check.outputs.version_changed == 'true'
         run: |
-          if grep -E '"@hexcuit/[^"]+": "[^"]*-canary[^"]*"' package.json; then
-            echo "::error::Canary dependencies detected. Please release @hexcuit/server first, then update to the stable version."
+          if grep -qE '"@hexcuit/[^"]+": "[^"]*-canary' package.json; then
+            echo "::error::Canary dependencies found. Please release the stable version first."
             exit 1
           fi
-          echo "No canary dependencies found."
 
       - name: Create GitHub Release
         if: steps.version_check.outputs.version_changed == 'true'
