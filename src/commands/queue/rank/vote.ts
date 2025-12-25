@@ -77,8 +77,9 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 		})
 
 		if (!matchResponse.ok) {
+			const voteLabel = vote === 'BLUE' ? '🔵 Blue勝利' : vote === 'RED' ? '🔴 Red勝利' : '🤝 Draw'
 			await interaction.reply({
-				content: `${vote === 'BLUE' ? '🔵 Blue' : '🔴 Red'}勝利に投票しました。`,
+				content: `${voteLabel}に投票しました。`,
 				flags: MessageFlags.Ephemeral,
 			})
 			return

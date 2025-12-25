@@ -205,10 +205,26 @@ const startRankedMatchFromFull = async (
 	queueId: string,
 	participants: Participant[],
 ) => {
-	// Close the recruitment
-	await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
+	// Close the recruitment first - must succeed before creating match
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
 		param: { guildId, id: queueId },
 	})
+
+	if (!closeResponse.ok) {
+		logger.error('募集終了失敗:', closeResponse.status)
+		// Re-enable buttons since queue is still open
+		const embed = createRankedEmbed(participants, CAPACITY, interaction.user.id)
+		const buttons = createRankedButtons(guildId, queueId, false)
+		await originalMessage.edit({
+			embeds: [embed],
+			components: [buttons],
+		})
+		await interaction.followUp({
+			content: '試合の開始に失敗しました。もう一度お試しください。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
 
 	// Generate match ID
 	const matchId = crypto.randomUUID()
