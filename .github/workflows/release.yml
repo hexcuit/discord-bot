@@ -55,6 +55,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check for canary dependencies
+        if: steps.version_check.outputs.version_changed == 'true'
+        run: |
+          if grep -qE '"@hexcuit/[^"]+": "[^"]*-canary' package.json; then
+            echo "::error::Canary dependencies found. Please release the stable version first."
+            exit 1
+          fi
+
       - name: Create GitHub Release
         if: steps.version_check.outputs.version_changed == 'true'
         run: |

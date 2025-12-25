@@ -15,10 +15,10 @@
 		"test:watch": "bun test --watch",
 		"test:coverage": "bun test --coverage",
 		"changeset": "changeset",
-		"version": "changeset version && bun i --lockfile-only"
+		"version": "changeset version && bun scripts/fix-canary-deps.ts && bun i --lockfile-only"
 	},
 	"dependencies": {
-		"@hexcuit/server": "0.9.0-canary-20251225024359",
+		"@hexcuit/server": "0.9.0-canary-20251225081055",
 		"@resvg/resvg-js": "2.6.2",
 		"discord.js": "14.25.1",
 		"satori": "0.18.3"
