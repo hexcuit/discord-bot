@@ -5,7 +5,7 @@
 
 import { $ } from 'bun'
 
-const packageJsonPath = './package.json'
+const packageJsonPath = Bun.fileURLToPath(new URL('../package.json', import.meta.url))
 const packageJson = await Bun.file(packageJsonPath).json()
 
 const canaryPattern = /^(\d+\.\d+\.\d+)-canary.*/
