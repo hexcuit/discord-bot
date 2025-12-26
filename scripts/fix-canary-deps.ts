@@ -48,7 +48,7 @@ for (const depType of ['dependencies', 'devDependencies'] as const) {
 }
 
 if (modified) {
-	await Bun.write(packageJsonPath, JSON.stringify(packageJson, null, '\t'))
+	await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, '\t')}\n`)
 	console.log('\nUpdated package.json with stable versions')
 
 	console.log('Running bun install to update lockfile...')
