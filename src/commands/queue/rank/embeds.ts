@@ -90,9 +90,11 @@ export const createMatchEmbed = (
 	const blueTeam = Object.entries(teamAssignments)
 		.filter(([, a]) => a.team === 'BLUE')
 		.map(([discordId, a]) => ({ discordId, ...a }))
+		.sort((a, b) => LOL_ROLES.indexOf(a.role) - LOL_ROLES.indexOf(b.role))
 	const redTeam = Object.entries(teamAssignments)
 		.filter(([, a]) => a.team === 'RED')
 		.map(([discordId, a]) => ({ discordId, ...a }))
+		.sort((a, b) => LOL_ROLES.indexOf(a.role) - LOL_ROLES.indexOf(b.role))
 
 	const blueTotal = blueTeam.reduce((sum, p) => sum + p.rating, 0)
 	const redTotal = redTeam.reduce((sum, p) => sum + p.rating, 0)
@@ -129,7 +131,7 @@ export const createMatchEmbed = (
 		const totalVotes = blueVotes + redVotes + drawVotes
 		embed.addFields({
 			name: `投票状況 (${totalVotes}/10)`,
-			value: `🔵 Blue勝利: ${blueVotes}票\n🔴 Red勝利: ${redVotes}票\n⚪ 引き分け: ${drawVotes}票\n(${votesRequired}票で早期確定 / 全員投票で最多得票確定)`,
+			value: `🔵 Blue勝利: ${blueVotes}票\n🔴 Red勝利: ${redVotes}票\n🤝 引き分け: ${drawVotes}票\n(${votesRequired}票で早期確定 / 全員投票で最多得票確定)`,
 			inline: false,
 		})
 	}
@@ -151,7 +153,7 @@ export const createVoteButtons = (matchId: string, disabled = false) => {
 			.setDisabled(disabled),
 		new ButtonBuilder()
 			.setCustomId(`queue:vote_draw:${matchId}`)
-			.setLabel('⚪ 引き分け')
+			.setLabel('🤝 引き分け')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),
 	)

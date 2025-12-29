@@ -35,8 +35,8 @@ export const executeCreate = async (interaction: ChatInputCommandInteraction, gu
 			return
 		}
 
-		const { queue } = await response.json()
-		const buttons = createButtons(guildId, queue.id, false)
+		const queueData = await response.json()
+		const buttons = createButtons(guildId, queueData.id, false)
 		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: '募集を作成しました！' })

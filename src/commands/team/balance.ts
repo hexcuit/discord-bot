@@ -74,17 +74,26 @@ const fetchRankData = async (
 	discordIds: string[],
 ): Promise<{ success: boolean; ranks?: RankInfo[]; error?: string }> => {
 	try {
-		const response = await apiClient.v1.ranks.$get({
-			query: { id: discordIds },
+		// Fetch each user's rank in parallel
+		const rankPromises = discordIds.map(async (discordId) => {
+			const response = await apiClient.v1.users[':discordId'].$get({
+				param: { discordId },
+			})
+			if (response.ok) {
+				const data = await response.json()
+				if (data.rank) {
+					return {
+						discordId,
+						tier: data.rank.tier,
+						division: data.rank.division,
+					}
+				}
+			}
+			return { discordId, tier: 'UNRANKED', division: null }
 		})
 
-		if (!response.ok) {
-			logger.error('APIリクエスト失敗:', response.status, response.statusText)
-			return { success: false, error: ERROR_MESSAGES.API_ERROR }
-		}
-
-		const data = await response.json()
-		return { success: true, ranks: data.ranks }
+		const ranks = await Promise.all(rankPromises)
+		return { success: true, ranks }
 	} catch (error) {
 		logger.error('API呼び出しエラー:', error)
 		return { success: false, error: ERROR_MESSAGES.API_ERROR }

@@ -35,8 +35,8 @@ export const executeRank = async (interaction: ChatInputCommandInteraction, guil
 			return
 		}
 
-		const { queue } = await response.json()
-		const buttons = createRankedButtons(guildId, queue.id, false)
+		const queueData = await response.json()
+		const buttons = createRankedButtons(guildId, queueData.id, false)
 		await message.edit({ embeds: [embed], components: [buttons] })
 
 		await interaction.editReply({ content: 'ランク戦募集を作成しました！' })

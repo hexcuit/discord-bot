@@ -54,24 +54,16 @@ export default {
 
 			// APIリクエスト
 
-			//元のランクを取得
-			const currentRankResponse = await apiClient.v1.ranks.$get({
-				query: { id: interaction.user.id },
+			// 元のランクを取得
+			const currentUserResponse = await apiClient.v1.users[':discordId'].$get({
+				param: { discordId: interaction.user.id },
 			})
 
-			if (!currentRankResponse.ok) {
-				logger.error('APIリクエスト失敗:', currentRankResponse.status, currentRankResponse.statusText)
-				await interaction.reply({
-					content: '登録中にエラーが発生しました。後でもう一度お試しください。',
-					flags: MessageFlags.Ephemeral,
-				})
-				return
-			}
-
-			const currentRank = (await currentRankResponse.json()).ranks[0]
+			// ユーザーが存在しない場合は null
+			const currentRank = currentUserResponse.ok ? (await currentUserResponse.json()).rank : null
 
 			// ランクを登録/更新
-			const updateResponse = await apiClient.v1.ranks[':discordId'].$put({
+			const updateResponse = await apiClient.v1.users[':discordId'].rank.$put({
 				param: { discordId: interaction.user.id },
 				json: {
 					tier,
