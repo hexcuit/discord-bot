@@ -64,7 +64,34 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 
 		const confirmData = await confirmResponse.json()
 
-		const resultEmbed = createMatchResultEmbed(confirmData.winningTeam, confirmData.ratingChanges)
+		// Fetch match data to get player teams
+		const matchResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].$get({
+			param: { guildId: interaction.guildId, matchId },
+		})
+
+		if (!matchResponse.ok || !confirmData.winningTeam) {
+			await interaction.update({
+				content: '試合が確定しました。',
+				embeds: [],
+				components: [],
+			})
+			return
+		}
+
+		const matchData = await matchResponse.json()
+		const playerTeams = new Map(matchData.players.map((p) => [p.discordId, p.team]))
+
+		// Transform ratingChanges to include team and rank info
+		const ratingChangesWithTeam = confirmData.ratingChanges.map((r) => ({
+			discordId: r.discordId,
+			team: playerTeams.get(r.discordId) ?? 'BLUE',
+			ratingBefore: r.ratingBefore,
+			ratingAfter: r.ratingAfter,
+			change: r.ratingChange,
+			rank: '', // Rank display not needed for result
+		}))
+
+		const resultEmbed = createMatchResultEmbed(confirmData.winningTeam, ratingChangesWithTeam)
 
 		await interaction.update({
 			embeds: [resultEmbed],
@@ -87,23 +114,27 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 
 		const matchData = await matchResponse.json()
 
+		// Build teamAssignments from players array
 		const teamAssignments: TeamAssignments = Object.fromEntries(
-			Object.entries(matchData.match.teamAssignments).map(([discordId, assignment]) => [
-				discordId,
+			matchData.players.map((player) => [
+				player.discordId,
 				{
-					team: assignment.team,
-					role: assignment.role,
-					rating: assignment.rating,
+					team: player.team,
+					role: player.role,
+					rating: player.ratingBefore,
 				},
 			]),
 		)
 
+		// Calculate votesRequired (majority)
+		const votesRequired = Math.ceil(matchData.players.length / 2) + 1
+
 		const embed = createMatchEmbed(
 			teamAssignments,
-			matchData.match.blueVotes,
-			matchData.match.redVotes,
-			matchData.match.drawVotes,
-			matchData.votesRequired,
+			matchData.blueVotes,
+			matchData.redVotes,
+			matchData.drawVotes,
+			votesRequired,
 		)
 		const buttons = createVoteButtons(matchId)
 

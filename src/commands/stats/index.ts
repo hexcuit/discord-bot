@@ -2,23 +2,6 @@ import { AttachmentBuilder, InteractionContextType, MessageFlags, SlashCommandBu
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
-import { generateStatsCard, type MatchHistoryItem } from '@/utils/stats-card'
-
-type RatingData = {
-	discordId: string
-	guildId: string
-	rating: number | null
-	wins: number | null
-	losses: number | null
-	placementGames: number | null
-	isPlacement: boolean | null
-	rank: string | null
-	rankDetail: {
-		tier: string
-		division: string | null
-		lp: number
-	} | null
-}
 
 export default {
 	command: new SlashCommandBuilder()
@@ -44,83 +27,35 @@ export default {
 		const guildId = interaction.guildId
 
 		try {
-			// レーティング取得
-			const response = await apiClient.v1.guilds[':guildId'].ratings.$get({
-				param: { guildId },
-				query: { id: [targetUser.id] },
+			// 統計画像を取得（サーバー側で生成）
+			const imageResponse = await apiClient.v1.guilds[':guildId'].users[':discordId'].stats.image.$get({
+				param: { guildId, discordId: targetUser.id },
+				query: {
+					displayName: targetUser.displayName,
+					avatarUrl: targetUser.displayAvatarURL({ extension: 'png', size: 128 }),
+				},
 			})
 
-			if (!response.ok) {
-				logger.error('レーティング取得失敗:', response.status)
+			if (!imageResponse.ok) {
+				// 統計が見つからない場合
+				if (imageResponse.status === 404) {
+					await interaction.editReply({
+						content: `<@${targetUser.id}> はまだランク戦に参加していません。`,
+					})
+					return
+				}
+
+				logger.error('統計画像取得失敗:', imageResponse.status)
 				await interaction.editReply({
 					content: 'ランク情報の取得に失敗しました。',
 				})
 				return
 			}
 
-			const data = (await response.json()) as { ratings: RatingData[] }
-			const rating = data.ratings[0]
+			// 画像データをバッファとして取得
+			const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+			const attachment = new AttachmentBuilder(imageBuffer, { name: 'stats.png' })
 
-			if (!rating || rating.rating === null) {
-				await interaction.editReply({
-					content: `<@${targetUser.id}> はまだランク戦に参加していません。`,
-				})
-				return
-			}
-
-			// ランキング内での順位を取得
-			const rankingResponse = await apiClient.v1.guilds[':guildId'].rankings.$get({
-				param: { guildId },
-				query: { limit: '100' },
-			})
-
-			let position: number | null = null
-			if (rankingResponse.ok) {
-				const rankingData = (await rankingResponse.json()) as {
-					rankings: Array<{ discordId: string; position: number }>
-				}
-				const userRanking = rankingData.rankings.find((r) => r.discordId === targetUser.id)
-				position = userRanking?.position ?? null
-			}
-
-			// 試合履歴を取得
-			let matchHistory: MatchHistoryItem[] = []
-			try {
-				const historyResponse = await apiClient.v1.guilds[':guildId'].users[':discordId'].$get({
-					param: { guildId, discordId: targetUser.id },
-					query: { limit: '5' },
-				})
-				if (historyResponse.ok) {
-					const historyData = (await historyResponse.json()) as {
-						history: Array<{ won: boolean; change: number }>
-					}
-					matchHistory = historyData.history.map((h) => ({ won: h.won, change: h.change }))
-				}
-			} catch {
-				// 履歴取得失敗は無視（空配列のまま）
-			}
-
-			const wins = rating.wins ?? 0
-			const losses = rating.losses ?? 0
-			const totalGames = wins + losses
-			const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0
-
-			// 統計カード画像を生成
-			const statsCardBuffer = await generateStatsCard({
-				displayName: targetUser.displayName,
-				avatarUrl: targetUser.displayAvatarURL({ extension: 'png', size: 128 }),
-				rank: rating.rank ?? 'Unranked',
-				rating: rating.rating,
-				wins,
-				losses,
-				winRate,
-				position,
-				isPlacement: rating.isPlacement ?? false,
-				placementGames: rating.placementGames ?? 0,
-				matchHistory,
-			})
-
-			const attachment = new AttachmentBuilder(statsCardBuffer, { name: 'stats.png' })
 			await interaction.editReply({ files: [attachment] })
 		} catch (error) {
 			logger.error('ランク取得エラー:', error)

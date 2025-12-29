@@ -21,8 +21,8 @@ export const pendingRoleSelections = new Map<string, { mainRole: LolRole | null;
 
 export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
 	// Check if already joined via API
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
-		param: { guildId, id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
+		param: { guildId, queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -36,7 +36,7 @@ export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, 
 	const recruitData = await recruitResponse.json()
 
 	// Check if recruitment is still open
-	if (recruitData.queue.status === 'closed') {
+	if (recruitData.status === 'closed') {
 		await interaction.reply({
 			content: '募集は終了しています。',
 			flags: MessageFlags.Ephemeral,
@@ -115,8 +115,8 @@ export const handleConfirmRankJoin = async (
 	}
 
 	// Join the queue via API with roles
-	const joinResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].players.$post({
-		param: { guildId, id: queueId },
+	const joinResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players.$post({
+		param: { guildId, queueId },
 		json: {
 			discordId: interaction.user.id,
 			mainRole: pendingRoles.mainRole ?? undefined,
@@ -143,14 +143,12 @@ export const handleConfirmRankJoin = async (
 		return
 	}
 
-	const joinData = await joinResponse.json()
-
 	// Clean up pending selection
 	pendingRoleSelections.delete(pendingKey)
 
 	// Fetch updated queue info
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
-		param: { guildId, id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
+		param: { guildId, queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -177,10 +175,10 @@ export const handleConfirmRankJoin = async (
 
 	const originalMessage = await channel.messages.fetch(originalMessageId)
 
-	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
+	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.creatorId ?? '不明')
 
 	// If queue is now full, start the match
-	if (joinData.isFull) {
+	if (recruitData.status === 'full') {
 		await originalMessage.edit({
 			embeds: [embed],
 			components: [],
@@ -206,8 +204,8 @@ const startRankedMatchFromFull = async (
 	participants: Participant[],
 ) => {
 	// Close the recruitment first - must succeed before creating match
-	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
-		param: { guildId, id: queueId },
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$delete({
+		param: { guildId, queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -226,59 +224,47 @@ const startRankedMatchFromFull = async (
 		return
 	}
 
-	// Generate match ID
-	const matchId = crypto.randomUUID()
-
-	// Fetch ratings for participants
-	const discordIds = participants.map((p) => p.discordId)
-	const ratingsResponse = await apiClient.v1.guilds[':guildId'].ratings.$get({
-		param: { guildId },
-		query: { id: discordIds },
-	})
-
-	const ratingsData = ratingsResponse.ok ? await ratingsResponse.json() : null
-	const ratings = ratingsData?.ratings ?? []
-
-	// Map ratings to participants
-	const participantsWithRating = participants.map((p) => {
-		const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
-		return {
-			discordId: p.discordId,
-			mainRole: p.mainRole,
-			subRole: p.subRole,
-			rating: ratingInfo?.rating ?? INITIAL_RATING,
-		}
-	})
+	// Fetch ratings for participants individually
+	const participantsWithRating = await Promise.all(
+		participants.map(async (p) => {
+			const statsResponse = await apiClient.v1.guilds[':guildId'].users[':discordId'].stats.$get({
+				param: { guildId, discordId: p.discordId },
+			})
+			const rating = statsResponse.ok ? (await statsResponse.json()).rating : INITIAL_RATING
+			return {
+				discordId: p.discordId,
+				mainRole: p.mainRole,
+				subRole: p.subRole,
+				rating,
+			}
+		}),
+	)
 
 	// Balance teams
 	const teamAssignments = balanceTeamsByElo(participantsWithRating)
 
-	// Convert to API format (uppercase team names)
-	const teamAssignmentsForAPI = Object.fromEntries(
-		Object.entries(teamAssignments).map(([discordId, assignment]) => [
-			discordId,
-			{
-				team: assignment.team,
-				role: assignment.role,
-				rating: assignment.rating,
-			},
-		]),
-	)
+	// Convert to players array format for API
+	const playersForAPI = Object.entries(teamAssignments).map(([discordId, assignment]) => ({
+		discordId,
+		team: assignment.team,
+		role: assignment.role,
+		ratingBefore: assignment.rating,
+	}))
 
 	// Create match via API
 	const matchResponse = await apiClient.v1.guilds[':guildId'].matches.$post({
 		param: { guildId },
 		json: {
-			id: matchId,
 			channelId: interaction.channelId,
 			messageId: originalMessage.id,
-			teamAssignments: teamAssignmentsForAPI,
+			players: playersForAPI,
 		},
 	})
 
 	if (matchResponse.ok && originalMessage.channel.isSendable()) {
+		const matchData = await matchResponse.json()
 		const matchEmbed = createMatchEmbed(teamAssignments, 0, 0, 0, 6)
-		const voteButtons = createVoteButtons(matchId)
+		const voteButtons = createVoteButtons(matchData.id)
 
 		const mentions = participants.map((p) => `<@${p.discordId}>`).join(' ')
 		await originalMessage.channel.send({
@@ -291,10 +277,10 @@ const startRankedMatchFromFull = async (
 
 export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
 	// ランク戦キャンセル
-	const response = await apiClient.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete({
+	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players[':discordId'].$delete({
 		param: {
 			guildId,
-			id: queueId,
+			queueId,
 			discordId: interaction.user.id,
 		},
 	})
@@ -310,8 +296,8 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
-		param: { guildId, id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
+		param: { guildId, queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -325,7 +311,7 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 
 	const recruitData = await recruitResponse.json()
 
-	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
+	const embed = createRankedEmbed(recruitData.players, CAPACITY, recruitData.creatorId ?? '不明')
 	const buttons = createRankedButtons(guildId, queueId, false)
 
 	await interaction.update({
@@ -336,8 +322,8 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 
 export const handleRankForce = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
 	// ランク戦強制開始
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
-		param: { guildId, id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
+		param: { guildId, queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -360,7 +346,7 @@ export const handleRankForce = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	if (recruitData.queue.status === 'closed') {
+	if (recruitData.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
 			flags: MessageFlags.Ephemeral,
@@ -377,8 +363,8 @@ export const handleRankForce = async (interaction: ButtonInteraction<CacheType>,
 	}
 
 	// 募集終了API呼び出し
-	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
-		param: { guildId, id: queueId },
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$delete({
+		param: { guildId, queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -401,52 +387,39 @@ const startRankedMatch = async (
 	participants: Participant[],
 ) => {
 	// 参加者のレーティングを取得
-	const discordIds = participants.map((p) => p.discordId)
-	const ratingsResponse = await apiClient.v1.guilds[':guildId'].ratings.$get({
-		param: { guildId },
-		query: { id: discordIds },
-	})
-
-	const ratingsData = ratingsResponse.ok ? await ratingsResponse.json() : null
-	const ratings = ratingsData?.ratings ?? []
-
-	// レーティングを参加者にマッピング
-	const participantsWithRating = participants.map((p) => {
-		const ratingInfo = ratings.find((r) => r.discordId === p.discordId)
-		return {
-			discordId: p.discordId,
-			mainRole: p.mainRole,
-			subRole: p.subRole,
-			rating: ratingInfo?.rating ?? INITIAL_RATING,
-		}
-	})
+	const participantsWithRating = await Promise.all(
+		participants.map(async (p) => {
+			const statsResponse = await apiClient.v1.guilds[':guildId'].users[':discordId'].stats.$get({
+				param: { guildId, discordId: p.discordId },
+			})
+			const rating = statsResponse.ok ? (await statsResponse.json()).rating : INITIAL_RATING
+			return {
+				discordId: p.discordId,
+				mainRole: p.mainRole,
+				subRole: p.subRole,
+				rating,
+			}
+		}),
+	)
 
 	// チームバランス
 	const teamAssignments = balanceTeamsByElo(participantsWithRating)
 
-	// 試合ID生成
-	const matchId = crypto.randomUUID()
-
-	// API用に大文字形式に変換
-	const teamAssignmentsForAPI = Object.fromEntries(
-		Object.entries(teamAssignments).map(([discordId, assignment]) => [
-			discordId,
-			{
-				team: assignment.team,
-				role: assignment.role,
-				rating: assignment.rating,
-			},
-		]),
-	)
+	// API用に players 配列形式に変換
+	const playersForAPI = Object.entries(teamAssignments).map(([discordId, assignment]) => ({
+		discordId,
+		team: assignment.team,
+		role: assignment.role,
+		ratingBefore: assignment.rating,
+	}))
 
 	// 試合作成API呼び出し
 	const matchResponse = await apiClient.v1.guilds[':guildId'].matches.$post({
 		param: { guildId },
 		json: {
-			id: matchId,
 			channelId: interaction.channelId,
 			messageId: interaction.message.id,
-			teamAssignments: teamAssignmentsForAPI,
+			players: playersForAPI,
 		},
 	})
 
@@ -460,9 +433,11 @@ const startRankedMatch = async (
 		return
 	}
 
+	const matchData = await matchResponse.json()
+
 	// 投票UI表示
 	const embed = createMatchEmbed(teamAssignments, 0, 0, 0, 6)
-	const buttons = createVoteButtons(matchId)
+	const buttons = createVoteButtons(matchData.id)
 
 	await interaction.update({
 		embeds: [embed],
@@ -476,8 +451,8 @@ const startRankedMatch = async (
 }
 
 export const handleRankClose = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$get({
-		param: { guildId, id: queueId },
+	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
+		param: { guildId, queueId },
 	})
 
 	if (!recruitResponse.ok) {
@@ -492,7 +467,7 @@ export const handleRankClose = async (interaction: ButtonInteraction<CacheType>,
 	const recruitData = await recruitResponse.json()
 
 	// 主催者または管理者のみ終了可能
-	const isCreator = recruitData.queue.creatorId === interaction.user.id
+	const isCreator = recruitData.creatorId ?? '不明' === interaction.user.id
 	const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)
 
 	if (!isCreator && !isAdmin) {
@@ -503,7 +478,7 @@ export const handleRankClose = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	if (recruitData.queue.status === 'closed') {
+	if (recruitData.status === 'closed') {
 		await interaction.reply({
 			content: 'この募集は既に終了しています。',
 			flags: MessageFlags.Ephemeral,
@@ -511,8 +486,8 @@ export const handleRankClose = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':id'].$delete({
-		param: { guildId, id: queueId },
+	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$delete({
+		param: { guildId, queueId },
 	})
 
 	if (!closeResponse.ok) {
@@ -524,7 +499,7 @@ export const handleRankClose = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	const closedEmbed = createRankedClosedEmbed(recruitData.players, CAPACITY, recruitData.queue.creatorId)
+	const closedEmbed = createRankedClosedEmbed(recruitData.players, CAPACITY, recruitData.creatorId ?? '不明')
 
 	await interaction.update({
 		embeds: [closedEmbed],

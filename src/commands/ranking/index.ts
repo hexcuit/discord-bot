@@ -46,18 +46,7 @@ export default {
 				return
 			}
 
-			const data = (await response.json()) as {
-				guildId: string
-				rankings: Array<{
-					position: number
-					discordId: string
-					rating: number
-					wins: number
-					losses: number
-					winRate: number
-					rank: string
-				}>
-			}
+			const data = await response.json()
 
 			if (data.rankings.length === 0) {
 				await interaction.editReply({
@@ -80,8 +69,10 @@ export default {
 			}
 
 			const rankingLines = data.rankings.map((r) => {
-				const medal = getMedal(r.position)
-				return `${medal} <@${r.discordId}> - ${r.rank} (${r.rating}) | ${r.wins}W ${r.losses}L (${r.winRate}%)`
+				const medal = getMedal(r.rank)
+				const totalGames = r.wins + r.losses
+				const winRate = totalGames > 0 ? Math.round((r.wins / totalGames) * 100) : 0
+				return `${medal} <@${r.discordId}> - ${r.rating} | ${r.wins}W ${r.losses}L (${winRate}%)`
 			})
 
 			const embed = new EmbedBuilder()
