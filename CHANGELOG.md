@@ -1,5 +1,19 @@
 # @hexcuit/discord-bot
 
+## 0.10.0
+
+### Minor Changes
+
+- [#60](https://github.com/hexcuit/discord-bot/pull/60) [`c805f05`](https://github.com/hexcuit/discord-bot/commit/c805f052cfc2444ffa9975e19e9257144abe5595) Thanks [@11gather11](https://github.com/11gather11)! - Refactor all commands to use new server API
+
+  - Update all API endpoints to match new server v1 routes
+  - Add `/stats` command for viewing user statistics
+  - Refactor queue commands (anonymous, create, rank) for new response format
+  - Update ranking command with improved error handling
+  - Fix admin reset user command for new API
+  - Add unit tests for balance utility
+  - Add test setup infrastructure with Bun test
+
 ## 0.9.0
 
 ### Minor Changes
