@@ -1,0 +1,65 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_env:
+        description: 'Update .env file from secrets'
+        type: boolean
+        default: true
+      restart_only:
+        description: 'Restart only (skip docker pull)'
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Copy docker-compose.yml to VPS
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "docker-compose.yml"
+          target: "/opt/hexcuit-discord-bot/"
+
+      - name: Create .env file on VPS
+        if: ${{ inputs.update_env }}
+        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cat > /opt/hexcuit-discord-bot/.env << 'EOF'
+            DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+            DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+            API_BASE_URL=${{ secrets.API_BASE_URL }}
+            API_KEY=${{ secrets.API_KEY }}
+            DISCORD_LOG_WEBHOOK_URL=${{ secrets.DISCORD_LOG_WEBHOOK_URL }}
+            EOF
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd /opt/hexcuit-discord-bot
+            if [ "${{ inputs.restart_only }}" = "true" ]; then
+              docker compose restart
+            else
+              docker compose pull
+              docker compose up -d
+            fi
+            docker image prune -f
