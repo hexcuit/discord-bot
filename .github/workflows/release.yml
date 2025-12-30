@@ -120,6 +120,23 @@ jobs:
           source: "docker-compose.yml"
           target: "/opt/hexcuit-discord-bot/"
 
+      - name: Create .env file on VPS
+        if: steps.version_check.outputs.version_changed == 'true'
+        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cat > /opt/hexcuit-discord-bot/.env << 'EOF'
+            DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+            DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+            API_BASE_URL=${{ secrets.API_BASE_URL }}
+            API_KEY=${{ secrets.API_KEY }}
+            DISCORD_LOG_WEBHOOK_URL=${{ secrets.DISCORD_LOG_WEBHOOK_URL }}
+            EOF
+
       - name: Deploy to VPS
         if: steps.version_check.outputs.version_changed == 'true'
         uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
