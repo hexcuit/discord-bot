@@ -18,7 +18,7 @@
 		"version": "changeset version && bun scripts/fix-canary-deps.ts && bun i --lockfile-only"
 	},
 	"dependencies": {
-		"@hexcuit/server": "0.10.0",
+		"@hexcuit/server": "0.11.1",
 		"discord.js": "14.25.1"
 	},
 	"devDependencies": {

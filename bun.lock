@@ -5,7 +5,7 @@
     "": {
       "name": "@hexcuit/discord-bot",
       "dependencies": {
-        "@hexcuit/server": "0.10.0",
+        "@hexcuit/server": "0.11.1",
         "discord.js": "14.25.1",
       },
       "devDependencies": {
@@ -92,7 +92,7 @@
 
     "@discordjs/ws": ["@discordjs/ws@1.2.3", "", { "dependencies": { "@discordjs/collection": "^2.1.0", "@discordjs/rest": "^2.5.1", "@discordjs/util": "^1.1.0", "@sapphire/async-queue": "^1.5.2", "@types/ws": "^8.5.10", "@vladfrangu/async_event_emitter": "^2.2.4", "discord-api-types": "^0.38.1", "tslib": "^2.6.2", "ws": "^8.17.0" } }, "sha512-wPlQDxEmlDg5IxhJPuxXr3Vy9AjYq5xCvFWGJyD7w7Np8ZGu+Mc+97LCoEc/+AYCo2IDpKioiH0/c/mj5ZR9Uw=="],
 
-    "@hexcuit/server": ["@hexcuit/server@0.10.0", "", { "dependencies": { "@hono/zod-openapi": "1.2.0", "hono": "4.11.3" } }, "sha512-3IZ5bo1tkF++9/Grge1fVZHYrWKD2zu/zHauMEYNIHRjppgoYsAtR62WWd96vsDp2aXtc3OyZ78H/A6VCPzjiw=="],
+    "@hexcuit/server": ["@hexcuit/server@0.11.1", "", { "dependencies": { "@hono/zod-openapi": "1.2.0", "hono": "4.11.3" } }, "sha512-jlUlz08T/mnq0LwVofcbHbEdKrVU2VKztNlwjJcP3Lz5UfljUfJ9oFvnt7DWY/K4ObjNkVe517Lhpc3u11yV/Q=="],
 
     "@hono/zod-openapi": ["@hono/zod-openapi@1.2.0", "", { "dependencies": { "@asteasolutions/zod-to-openapi": "^8.1.0", "@hono/zod-validator": "^0.7.6", "openapi3-ts": "^4.5.0" }, "peerDependencies": { "hono": ">=4.3.6", "zod": "^4.0.0" } }, "sha512-KDfHqv/Wy4elVseZXgokbHxeWuqBL+AZfqsOMpEihBMUsk/fJ+bLIi3Sf70JFVpt1Ihui8RasYrInozt7ZBDIA=="],
 
