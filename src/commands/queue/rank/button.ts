@@ -114,13 +114,22 @@ export const handleConfirmRankJoin = async (
 		return
 	}
 
+	// Validate that both roles are selected
+	if (!pendingRoles.mainRole || !pendingRoles.subRole) {
+		await interaction.reply({
+			content: 'メインロールとサブロールの両方を選択してください。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
 	// Join the queue via API with roles
 	const joinResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players.$post({
 		param: { guildId, queueId },
 		json: {
 			discordId: interaction.user.id,
-			mainRole: pendingRoles.mainRole ?? undefined,
-			subRole: pendingRoles.subRole ?? undefined,
+			mainRole: pendingRoles.mainRole,
+			subRole: pendingRoles.subRole,
 		},
 	})
 
