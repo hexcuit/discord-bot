@@ -1,5 +1,15 @@
 # @hexcuit/discord-bot
 
+## 0.11.0
+
+### Minor Changes
+
+- [#67](https://github.com/hexcuit/discord-bot/pull/67) [`9e66066`](https://github.com/hexcuit/discord-bot/commit/9e66066dfdec0f26d113824bfea486f31f3a9f2a) Thanks [@11gather11](https://github.com/11gather11)! - Add build step for production bundles, significantly reducing Docker image size
+
+### Patch Changes
+
+- [#65](https://github.com/hexcuit/discord-bot/pull/65) [`4ad8554`](https://github.com/hexcuit/discord-bot/commit/4ad855447baea1e3db534d16fb54bfc5f3d5c347) Thanks [@11gather11](https://github.com/11gather11)! - Fix: Require both main and sub role selection before confirming queue join
+
 ## 0.10.0
 
 ### Minor Changes
