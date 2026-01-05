@@ -6,13 +6,14 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "bun --hot src/index.ts",
+		"build": "bun build src/index.ts scripts/deploy-commands.ts --outdir=dist --target=bun",
+		"start": "bun dist/src/index.js",
 		"deploy-commands": "bun scripts/deploy-commands.ts",
 		"check": "biome check",
 		"check:fix": "biome check --fix --unsafe",
 		"typecheck": "tsc --noEmit",
 		"generate": "bun scripts/generate-barrels.ts",
 		"test": "bun test",
-		"test:watch": "bun test --watch",
 		"test:coverage": "bun test --coverage",
 		"changeset": "changeset",
 		"version": "changeset version && bun scripts/fix-canary-deps.ts && bun i --lockfile-only"

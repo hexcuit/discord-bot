@@ -2,6 +2,6 @@
 exact = true
 
 [test]
-preload = ["./src/__tests__/setup.ts"]
+preload = ["./test/setup.ts"]
 coverageSkipTestFiles = true
-coveragePathIgnorePatterns = ["**/__tests__/**"]
+coveragePathIgnorePatterns = ["**/test/**"]

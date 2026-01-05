@@ -3,22 +3,16 @@
 FROM oven/bun:1.3.5-alpine@sha256:7156fcc0cee0194d390bfaf7f0eeda9a5e383e70cc90f31aad3a2440a033d7dc AS base
 WORKDIR /app
 
-# Install dependencies
-FROM base AS deps
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
-
-# Build stage (if needed for type checking)
+# Build stage
 FROM base AS build
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun run typecheck
+RUN bun run typecheck && bun run build
 
 # Production stage
 FROM base AS runtime
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=build /app/dist ./dist
 
 # Run as non-root user
 USER bun
@@ -27,4 +21,4 @@ USER bun
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD bun --version || exit 1
 
-CMD ["sh", "-c", "bun run deploy-commands && bun run src/index.ts"]
+CMD ["sh", "-c", "bun dist/scripts/deploy-commands.js && bun dist/src/index.js"]
