@@ -10,12 +10,11 @@ export const handleChatInputCommand = async (
 	}
 
 	try {
-		// コマンドの実行
 		await command.execute(interaction)
 	} catch (error) {
 		logger.error(`Error executing command "${interaction.commandName}":`, error)
 
-		const errorMessage = 'コマンドの実行中にエラーが発生しました。'
+		const errorMessage = 'An error occurred while executing the command.'
 
 		try {
 			if (interaction.replied || interaction.deferred) {

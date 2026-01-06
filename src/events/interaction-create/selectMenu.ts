@@ -2,7 +2,6 @@ import type { CacheType, StringSelectMenuInteraction } from 'discord.js'
 import { logger } from '@/lib/logger'
 
 export const handleSelectMenu = (interaction: StringSelectMenuInteraction<CacheType>) => {
-	// customIdをパース: "commandName:action:data"
 	const [commandName] = interaction.customId.split(':')
 	if (!commandName) {
 		return
