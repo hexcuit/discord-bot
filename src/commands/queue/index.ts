@@ -4,12 +4,12 @@ import { executeAnonymous } from './anonymous/index'
 import { handleButton } from './button'
 import { executeCreate } from './create/index'
 import { executeRank } from './rank/index'
-import { handleSelectMenu } from './selectMenu'
+import { handleSelectMenu } from './select-menu'
 
 export default {
 	command: new SlashCommandBuilder()
 		.setName('queue')
-		.setDescription('カスタムゲームの募集を作成します（定員10人）')
+		.setDescription('カスタムゲームの募集を作成します')
 		.setContexts(InteractionContextType.Guild)
 		.addSubcommand((subcommand) =>
 			subcommand.setName('create').setDescription('通常募集を作成（参加者名を表示）'),
