@@ -2,12 +2,16 @@ import { Client, GatewayIntentBits } from 'discord.js'
 import { loadCommands } from '@/handlers/commands'
 import { loadEvents } from '@/handlers/events'
 
-const client = new Client({
-	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
-})
+const main = () => {
+	const client = new Client({
+		intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+	})
 
-client.commands = await loadCommands()
+	client.commands = loadCommands()
 
-await loadEvents(client)
+	loadEvents(client)
 
-client.login(import.meta.env.DISCORD_TOKEN)
+	client.login(import.meta.env.DISCORD_TOKEN)
+}
+
+main()

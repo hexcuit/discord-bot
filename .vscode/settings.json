@@ -1,0 +1,14 @@
+{
+	"files.watcherExclude": {
+		"**/commands/index.ts": true,
+		"**/events/index.ts": true
+	},
+	"search.exclude": {
+		"**/commands/index.ts": true,
+		"**/events/index.ts": true
+	},
+	"files.readonlyInclude": {
+		"**/commands/index.ts": true,
+		"**/events/index.ts": true
+	}
+}

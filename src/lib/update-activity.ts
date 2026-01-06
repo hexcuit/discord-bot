@@ -2,9 +2,8 @@ import type { Client } from 'discord.js'
 import { ActivityType } from 'discord.js'
 import packages from '../../package.json'
 
-export function updateActivity(client: Client<true>) {
-	const guildCount = client.guilds.cache.size
-	client.user.setActivity(`v${packages.version} | ${guildCount}サーバー`, {
+export const updateActivity = (client: Client<true>) => {
+	client.user.setActivity(`v${packages.version} | ${client.guilds.cache.size}サーバー`, {
 		type: ActivityType.Playing,
 	})
 }
