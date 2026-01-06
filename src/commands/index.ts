@@ -3,6 +3,7 @@
 
 export { default as admin } from './admin'
 export { default as help } from './help'
+export { default as help copy } from './help copy'
 export { default as queue } from './queue'
 export { default as ranking } from './ranking'
 export { default as register } from './register'
