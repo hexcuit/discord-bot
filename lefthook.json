@@ -9,7 +9,7 @@
 				"stage_fixed": true
 			},
 			"generate": {
-				"glob": "src/{commands,events}/*/index.ts",
+				"glob": "src/{commands,events}/**/*",
 				"run": "bun run generate && git add src/commands/index.ts src/events/index.ts"
 			}
 		}
