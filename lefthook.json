@@ -10,7 +10,8 @@
 			},
 			"generate": {
 				"glob": "src/{commands,events}/*/index.ts",
-				"run": "bun run generate && git add src/commands/index.ts src/events/index.ts"
+				"run": "bun run generate",
+				"stage_fixed": true
 			}
 		}
 	}
