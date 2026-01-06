@@ -55,7 +55,9 @@ function createRandomTeamEmbeds(
 		{ name: 'Red Team', value: `${redTeam.members.length}人`, inline: true },
 		{
 			name: '除外メンバー',
-			value: excludedMembers.length ? excludedMembers.map((member) => `<@${member.id}>`).join('\n') : 'なし',
+			value: excludedMembers.length
+				? excludedMembers.map((member) => `<@${member.id}>`).join('\n')
+				: 'なし',
 			inline: false,
 		},
 	)

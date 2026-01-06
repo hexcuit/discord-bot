@@ -5,7 +5,11 @@ import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from '../shared/constants'
 import { createButtons, createClosedEmbed, createEmbed, createFullEmbed } from './embeds'
 
-export const handleJoin = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleJoin = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players.$post({
 		param: { guildId, queueId },
 		json: {
@@ -70,8 +74,14 @@ export const handleJoin = async (interaction: ButtonInteraction<CacheType>, guil
 	}
 }
 
-export const handleLeave = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
-	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players[':discordId'].$delete({
+export const handleLeave = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
+	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players[
+		':discordId'
+	].$delete({
 		param: {
 			guildId,
 			queueId,
@@ -81,7 +91,8 @@ export const handleLeave = async (interaction: ButtonInteraction<CacheType>, gui
 
 	if (!response.ok) {
 		const error = await response.json()
-		const message = error.message === 'Player not found' ? '参加していません。' : 'キャンセルに失敗しました。'
+		const message =
+			error.message === 'Player not found' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
@@ -115,7 +126,11 @@ export const handleLeave = async (interaction: ButtonInteraction<CacheType>, gui
 	})
 }
 
-export const handleForce = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleForce = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
 		param: { guildId, queueId },
 	})
@@ -182,7 +197,11 @@ export const handleForce = async (interaction: ButtonInteraction<CacheType>, gui
 	})
 }
 
-export const handleClose = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleClose = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
 		param: { guildId, queueId },
 	})

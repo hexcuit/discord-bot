@@ -12,7 +12,11 @@ import { ROLE_LABELS } from '../shared/constants'
 import type { Participant, TeamAssignments } from '../shared/types'
 import { formatRole } from '../shared/utils'
 
-export const createRankedEmbed = (participants: Participant[], capacity: number, creatorId: string) => {
+export const createRankedEmbed = (
+	participants: Participant[],
+	capacity: number,
+	creatorId: string,
+) => {
 	const embed = new EmbedBuilder().setTitle('🏆 ランク戦募集').setColor(COLORS.primary)
 
 	const participantList =
@@ -110,7 +114,8 @@ export const createMatchEmbed = (
 				? '🏆 ランク戦 - 結果確定'
 				: '🏆 ランク戦 - キャンセル'
 
-	const color = status === 'voting' ? COLORS.primary : status === 'confirmed' ? COLORS.success : COLORS.error
+	const color =
+		status === 'voting' ? COLORS.primary : status === 'confirmed' ? COLORS.success : COLORS.error
 
 	const embed = new EmbedBuilder().setTitle(title).setColor(color)
 
@@ -159,7 +164,11 @@ export const createVoteButtons = (matchId: string, disabled = false) => {
 	)
 }
 
-export const createRankedClosedEmbed = (participants: Participant[], capacity: number, creatorId: string) => {
+export const createRankedClosedEmbed = (
+	participants: Participant[],
+	capacity: number,
+	creatorId: string,
+) => {
 	const embed = new EmbedBuilder()
 		.setTitle('🏆 ランク戦募集終了')
 		.setDescription('この募集は終了しました。')

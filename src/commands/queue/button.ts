@@ -13,7 +13,13 @@ import {
 	handleJoin as handleCreateJoin,
 	handleLeave as handleCreateLeave,
 } from './create/button'
-import { handleConfirmRankJoin, handleRankClose, handleRankForce, handleRankJoin, handleRankLeave } from './rank/button'
+import {
+	handleConfirmRankJoin,
+	handleRankClose,
+	handleRankForce,
+	handleRankJoin,
+	handleRankLeave,
+} from './rank/button'
 import { handleVote, handleVoteDraw } from './rank/vote'
 import { parseCustomId } from './shared/utils'
 

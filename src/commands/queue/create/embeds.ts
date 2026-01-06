@@ -5,7 +5,8 @@ import { CAPACITY } from '../shared/constants'
 export const createEmbed = (participants: string[], capacity: number, creatorId: string) => {
 	const embed = new EmbedBuilder().setTitle('カスタム募集').setColor(COLORS.success)
 
-	const participantList = participants.length > 0 ? participants.map((id) => `<@${id}>`).join('\n') : 'なし'
+	const participantList =
+		participants.length > 0 ? participants.map((id) => `<@${id}>`).join('\n') : 'なし'
 
 	embed.addFields({
 		name: `参加者 (${participants.length}/${capacity})`,
@@ -44,7 +45,10 @@ export const createButtons = (guildId: string, queueId: string, disabled: boolea
 }
 
 export const createFullEmbed = (participants: string[], creatorId: string) => {
-	const embed = new EmbedBuilder().setTitle('募集完了!').setDescription('定員に達しました!').setColor(COLORS.success)
+	const embed = new EmbedBuilder()
+		.setTitle('募集完了!')
+		.setDescription('定員に達しました!')
+		.setColor(COLORS.success)
 
 	const mentions = participants.map((id) => `<@${id}>`).join('\n')
 	embed.addFields({
@@ -64,7 +68,8 @@ export const createClosedEmbed = (participants: string[], capacity: number, crea
 		.setDescription('この募集は終了しました。')
 		.setColor(COLORS.error)
 
-	const participantList = participants.length > 0 ? participants.map((id) => `<@${id}>`).join('\n') : 'なし'
+	const participantList =
+		participants.length > 0 ? participants.map((id) => `<@${id}>`).join('\n') : 'なし'
 	embed.addFields({
 		name: `参加者 (${participants.length}/${capacity})`,
 		value: participantList,

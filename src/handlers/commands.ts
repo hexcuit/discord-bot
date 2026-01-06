@@ -21,7 +21,9 @@ type RawCommand = {
 const hasRequiredFields = (cmd: unknown): cmd is RawCommand => {
 	if (!cmd || typeof cmd !== 'object') return false
 	const obj = cmd as Record<string, unknown>
-	return typeof obj.command === 'object' && obj.command !== null && typeof obj.execute === 'function'
+	return (
+		typeof obj.command === 'object' && obj.command !== null && typeof obj.execute === 'function'
+	)
 }
 
 const hasValidCommandData = (data: unknown): data is CommandData => {

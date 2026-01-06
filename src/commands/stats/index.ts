@@ -1,4 +1,9 @@
-import { AttachmentBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js'
+import {
+	AttachmentBuilder,
+	InteractionContextType,
+	MessageFlags,
+	SlashCommandBuilder,
+} from 'discord.js'
 import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
@@ -9,7 +14,10 @@ export default {
 		.setDescription('自分またはユーザーのランク戦統計を表示します')
 		.setContexts(InteractionContextType.Guild)
 		.addUserOption((option) =>
-			option.setName('user').setDescription('確認したいユーザー（指定しない場合は自分）').setRequired(false),
+			option
+				.setName('user')
+				.setDescription('確認したいユーザー（指定しない場合は自分）')
+				.setRequired(false),
 		),
 
 	execute: async (interaction) => {
@@ -28,7 +36,9 @@ export default {
 
 		try {
 			// 統計画像を取得（サーバー側で生成）
-			const imageResponse = await apiClient.v1.guilds[':guildId'].users[':discordId'].stats.image.$get({
+			const imageResponse = await apiClient.v1.guilds[':guildId'].users[
+				':discordId'
+			].stats.image.$get({
 				param: { guildId, discordId: targetUser.id },
 				query: {
 					displayName: targetUser.displayName,

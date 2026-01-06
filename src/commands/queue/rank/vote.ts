@@ -6,7 +6,11 @@ import { apiClient } from '@/utils/api-client'
 import type { TeamAssignments } from '../shared/types'
 import { createMatchEmbed, createMatchResultEmbed, createVoteButtons } from './embeds'
 
-export const handleVote = async (interaction: ButtonInteraction<CacheType>, matchId: string, vote: VoteOption) => {
+export const handleVote = async (
+	interaction: ButtonInteraction<CacheType>,
+	matchId: string,
+	vote: VoteOption,
+) => {
 	if (!interaction.guildId) {
 		await interaction.reply({
 			content: 'このコマンドはサーバー内でのみ使用できます。',
@@ -44,14 +48,18 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 	// 過半数で確定チェック（2段階確定: 6票で早期確定、全員投票後は最多得票で確定）
 	const totalVotes = data.blueVotes + data.redVotes + data.drawVotes
 	const hasEarlyMajority =
-		data.blueVotes >= data.votesRequired || data.redVotes >= data.votesRequired || data.drawVotes >= data.votesRequired
+		data.blueVotes >= data.votesRequired ||
+		data.redVotes >= data.votesRequired ||
+		data.drawVotes >= data.votesRequired
 	const allVotesIn = totalVotes >= data.totalParticipants
 
 	if (hasEarlyMajority || allVotesIn) {
 		// 試合確定
-		const confirmResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].confirm.$post({
-			param: { guildId: interaction.guildId, matchId },
-		})
+		const confirmResponse = await apiClient.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+			{
+				param: { guildId: interaction.guildId, matchId },
+			},
+		)
 
 		if (!confirmResponse.ok) {
 			logger.error('試合確定失敗:', confirmResponse.status)
@@ -104,7 +112,8 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 		})
 
 		if (!matchResponse.ok) {
-			const voteLabel = vote === 'BLUE' ? '🔵 Blue勝利' : vote === 'RED' ? '🔴 Red勝利' : '🤝 引き分け'
+			const voteLabel =
+				vote === 'BLUE' ? '🔵 Blue勝利' : vote === 'RED' ? '🔴 Red勝利' : '🤝 引き分け'
 			await interaction.reply({
 				content: `${voteLabel}に投票しました。`,
 				flags: MessageFlags.Ephemeral,
@@ -145,7 +154,10 @@ export const handleVote = async (interaction: ButtonInteraction<CacheType>, matc
 	}
 }
 
-export const handleVoteDraw = async (interaction: ButtonInteraction<CacheType>, matchId: string) => {
+export const handleVoteDraw = async (
+	interaction: ButtonInteraction<CacheType>,
+	matchId: string,
+) => {
 	// 引き分け投票は通常の投票と同じフローで処理
 	await handleVote(interaction, matchId, 'DRAW')
 }

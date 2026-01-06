@@ -14,7 +14,9 @@ export default {
 				.addStringOption((option) =>
 					option
 						.setName('exclude')
-						.setDescription('チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定')
+						.setDescription(
+							'チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定',
+						)
 						.setRequired(false),
 				),
 		)
@@ -25,7 +27,9 @@ export default {
 				.addStringOption((option) =>
 					option
 						.setName('exclude')
-						.setDescription('チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定')
+						.setDescription(
+							'チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定',
+						)
 						.setRequired(false),
 				),
 		),

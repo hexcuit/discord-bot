@@ -25,12 +25,16 @@ export default {
 			group
 				.setName('reset')
 				.setDescription('データリセット')
-				.addSubcommand((sub) => sub.setName('all').setDescription('サーバー全体のランク・マッチ履歴を初期化'))
+				.addSubcommand((sub) =>
+					sub.setName('all').setDescription('サーバー全体のランク・マッチ履歴を初期化'),
+				)
 				.addSubcommand((sub) =>
 					sub
 						.setName('user')
 						.setDescription('特定ユーザーのランク・マッチ履歴を初期化')
-						.addUserOption((opt) => opt.setName('target').setDescription('リセット対象のユーザー').setRequired(true)),
+						.addUserOption((opt) =>
+							opt.setName('target').setDescription('リセット対象のユーザー').setRequired(true),
+						),
 				),
 		),
 
@@ -62,7 +66,8 @@ export default {
 const executeResetAll = async (interaction: Parameters<Command['execute']>[0]) => {
 	// This feature is not yet implemented in the new API
 	await interaction.reply({
-		content: 'この機能は現在準備中です。個別のユーザーリセットは `/admin reset user` をご利用ください。',
+		content:
+			'この機能は現在準備中です。個別のユーザーリセットは `/admin reset user` をご利用ください。',
 		flags: MessageFlags.Ephemeral,
 	})
 }
@@ -116,7 +121,9 @@ const executeResetUser = async (interaction: Parameters<Command['execute']>[0]) 
 			if (!res.ok) {
 				await buttonInteraction.editReply({
 					content:
-						res.status === 404 ? `<@${targetUser.id}> のデータが見つかりませんでした。` : 'リセットに失敗しました。',
+						res.status === 404
+							? `<@${targetUser.id}> のデータが見つかりませんでした。`
+							: 'リセットに失敗しました。',
 					embeds: [],
 					components: [],
 				})

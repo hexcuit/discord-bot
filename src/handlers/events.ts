@@ -13,7 +13,11 @@ type RawEvent = {
 const hasRequiredFields = (evt: unknown): evt is RawEvent => {
 	if (!evt || typeof evt !== 'object') return false
 	const obj = evt as Record<string, unknown>
-	return typeof obj.name === 'string' && typeof obj.once === 'boolean' && typeof obj.execute === 'function'
+	return (
+		typeof obj.name === 'string' &&
+		typeof obj.once === 'boolean' &&
+		typeof obj.execute === 'function'
+	)
 }
 
 const isValidDiscordEvent = (name: string): boolean => {

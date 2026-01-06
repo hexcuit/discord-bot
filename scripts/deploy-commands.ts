@@ -19,7 +19,10 @@ const getDeploymentConfig = (): DeploymentConfig => {
 
 	return {
 		scope: 'guild',
-		route: Routes.applicationGuildCommands(import.meta.env.DISCORD_CLIENT_ID, import.meta.env.DISCORD_GUILD_ID),
+		route: Routes.applicationGuildCommands(
+			import.meta.env.DISCORD_CLIENT_ID,
+			import.meta.env.DISCORD_GUILD_ID,
+		),
 	}
 }
 

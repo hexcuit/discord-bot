@@ -1,5 +1,11 @@
 import type { ButtonInteraction, CacheType, Message } from 'discord.js'
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } from 'discord.js'
+import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	MessageFlags,
+	PermissionFlagsBits,
+} from 'discord.js'
 import type { LolRole } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
@@ -17,9 +23,16 @@ import {
 
 // Temporary storage for pending role selections (before join is confirmed)
 // Key: `${queueId}:${discordId}`, Value: { mainRole, subRole }
-export const pendingRoleSelections = new Map<string, { mainRole: LolRole | null; subRole: LolRole | null }>()
+export const pendingRoleSelections = new Map<
+	string,
+	{ mainRole: LolRole | null; subRole: LolRole | null }
+>()
 
-export const handleRankJoin = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleRankJoin = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	// Check if already joined via API
 	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
 		param: { guildId, queueId },
@@ -193,7 +206,13 @@ export const handleConfirmRankJoin = async (
 			components: [],
 		})
 
-		await startRankedMatchFromFull(interaction, originalMessage, guildId, queueId, recruitData.players)
+		await startRankedMatchFromFull(
+			interaction,
+			originalMessage,
+			guildId,
+			queueId,
+			recruitData.players,
+		)
 		return
 	}
 
@@ -284,9 +303,15 @@ const startRankedMatchFromFull = async (
 	}
 }
 
-export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleRankLeave = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	// ランク戦キャンセル
-	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players[':discordId'].$delete({
+	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players[
+		':discordId'
+	].$delete({
 		param: {
 			guildId,
 			queueId,
@@ -296,7 +321,8 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 
 	if (!response.ok) {
 		const error = await response.json()
-		const message = error.message === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
+		const message =
+			error.message === 'Not joined' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
@@ -329,7 +355,11 @@ export const handleRankLeave = async (interaction: ButtonInteraction<CacheType>,
 	})
 }
 
-export const handleRankForce = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleRankForce = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	// ランク戦強制開始
 	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
 		param: { guildId, queueId },
@@ -459,7 +489,11 @@ const startRankedMatch = async (
 	})
 }
 
-export const handleRankClose = async (interaction: ButtonInteraction<CacheType>, guildId: string, queueId: string) => {
+export const handleRankClose = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+) => {
 	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
 		param: { guildId, queueId },
 	})
@@ -508,7 +542,11 @@ export const handleRankClose = async (interaction: ButtonInteraction<CacheType>,
 		return
 	}
 
-	const closedEmbed = createRankedClosedEmbed(recruitData.players, CAPACITY, recruitData.creatorId ?? '不明')
+	const closedEmbed = createRankedClosedEmbed(
+		recruitData.players,
+		CAPACITY,
+		recruitData.creatorId ?? '不明',
+	)
 
 	await interaction.update({
 		embeds: [closedEmbed],

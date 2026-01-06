@@ -32,7 +32,9 @@ export const balanceTeamsByElo = (participants: ParticipantWithRating[]): TeamAs
 	})
 
 	// ロールを割り当て
-	const assignRoles = (team: typeof sorted): Array<{ discordId: string; role: LolRole; rating: number }> => {
+	const assignRoles = (
+		team: typeof sorted,
+	): Array<{ discordId: string; role: LolRole; rating: number }> => {
 		const assigned: Array<{ discordId: string; role: LolRole; rating: number }> = []
 		const usedRoles = new Set<LolRole>()
 

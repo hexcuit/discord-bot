@@ -4,7 +4,10 @@ import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from '../shared/constants'
 import { createButtons, createEmbed } from './embeds'
 
-export const executeAnonymous = async (interaction: ChatInputCommandInteraction, guildId: string) => {
+export const executeAnonymous = async (
+	interaction: ChatInputCommandInteraction,
+	guildId: string,
+) => {
 	await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 	if (!interaction.channel || !interaction.channel.isSendable()) {
