@@ -3,6 +3,16 @@ import { Glob } from 'bun'
 
 const SRC_DIR = join(import.meta.dir, '../src')
 
+// ANSI colors
+const c = {
+	reset: '\x1b[0m',
+	bold: '\x1b[1m',
+	dim: '\x1b[2m',
+	green: '\x1b[32m',
+	cyan: '\x1b[36m',
+	yellow: '\x1b[33m',
+} as const
+
 type BarrelConfig = {
 	dir: string
 	outputFile: string
@@ -13,7 +23,12 @@ const configs: BarrelConfig[] = [
 	{ dir: 'events', outputFile: 'src/events/index.ts' },
 ]
 
-async function generateBarrel(config: BarrelConfig): Promise<string> {
+type GenerateResult = {
+	content: string
+	modules: string[]
+}
+
+const generateBarrel = async (config: BarrelConfig): Promise<GenerateResult> => {
 	const targetDir = join(SRC_DIR, config.dir)
 	const glob = new Glob('*/index.ts')
 	const files = await Array.fromAsync(glob.scan(targetDir))
@@ -34,16 +49,30 @@ async function generateBarrel(config: BarrelConfig): Promise<string> {
 		})
 		.join('\n')
 
-	return `${header}${exports}\n`
-}
-
-async function main() {
-	for (const config of configs) {
-		const outputPath = join(import.meta.dir, '..', config.outputFile)
-		const content = await generateBarrel(config)
-		await Bun.write(outputPath, content)
-		console.log(`Generated: ${config.outputFile}`)
+	return {
+		content: `${header}${exports}\n`,
+		modules: modules.map((m) => m.name),
 	}
 }
 
-main()
+const main = async (): Promise<void> => {
+	console.log(`\n${c.bold}${c.cyan}🔧 Generating barrel files...${c.reset}\n`)
+
+	for (const config of configs) {
+		const outputPath = join(import.meta.dir, '..', config.outputFile)
+		const { content, modules } = await generateBarrel(config)
+		await Bun.write(outputPath, content)
+
+		console.log(`${c.green}✅ ${config.outputFile}${c.reset} ${c.dim}(${modules.length} modules)${c.reset}`)
+		for (let i = 0; i < modules.length; i++) {
+			const isLast = i === modules.length - 1
+			const prefix = isLast ? '└─' : '├─'
+			console.log(`${c.dim}   ${prefix} ${c.yellow}${modules[i]}${c.reset}`)
+		}
+		console.log()
+	}
+
+	console.log(`${c.bold}${c.green}Done!${c.reset}\n`)
+}
+
+await main()

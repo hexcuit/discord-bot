@@ -24,7 +24,7 @@ const getDeploymentConfig = (): DeploymentConfig => {
 }
 
 const deployCommands = async (): Promise<void> => {
-	const collection = await loadCommands()
+	const collection = loadCommands()
 
 	const commands = collection.map((cmd) => cmd.command.toJSON())
 
