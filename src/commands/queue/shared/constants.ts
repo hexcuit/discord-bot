@@ -10,4 +10,5 @@ export const ROLE_LABELS: Record<LolRole, string> = {
 	MIDDLE: 'ミッド',
 	BOTTOM: 'ボット',
 	SUPPORT: 'サポート',
+	FILL: 'フィル',
 }

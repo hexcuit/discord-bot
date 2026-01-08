@@ -64,12 +64,82 @@ export default {
 } satisfies Command
 
 const executeResetAll = async (interaction: Parameters<Command['execute']>[0]) => {
-	// This feature is not yet implemented in the new API
-	await interaction.reply({
-		content:
-			'この機能は現在準備中です。個別のユーザーリセットは `/admin reset user` をご利用ください。',
+	const guildId = interaction.guildId as string
+
+	const confirmButton = new ButtonBuilder()
+		.setCustomId('admin:reset:all:confirm')
+		.setLabel('リセットする')
+		.setStyle(ButtonStyle.Danger)
+
+	const cancelButton = new ButtonBuilder()
+		.setCustomId('admin:reset:all:cancel')
+		.setLabel('キャンセル')
+		.setStyle(ButtonStyle.Secondary)
+
+	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton, cancelButton)
+
+	const embed = new EmbedBuilder()
+		.setTitle('⚠️ サーバー全体データリセット')
+		.setDescription(
+			'**この操作は取り消せません！**\n\n' +
+				'以下のデータが **全て** 削除されます：\n' +
+				'- 全ユーザーのレート・ランク\n' +
+				'- 全マッチ履歴\n\n' +
+				'本当にリセットしますか？',
+		)
+		.setColor(COLORS.error)
+
+	const response = await interaction.reply({
+		embeds: [embed],
+		components: [row],
 		flags: MessageFlags.Ephemeral,
 	})
+
+	try {
+		const buttonInteraction = await response.awaitMessageComponent({
+			componentType: ComponentType.Button,
+			time: CONFIRM_TIMEOUT,
+		})
+
+		if (buttonInteraction.customId === 'admin:reset:all:confirm') {
+			await buttonInteraction.deferUpdate()
+
+			const res = await apiClient.v1.guilds[':guildId'].stats.$delete({
+				param: { guildId },
+			})
+
+			if (!res.ok) {
+				await buttonInteraction.editReply({
+					content: 'リセットに失敗しました。',
+					embeds: [],
+					components: [],
+				})
+				return
+			}
+
+			const resultEmbed = new EmbedBuilder()
+				.setTitle('リセット完了')
+				.setDescription('サーバー全体のデータをリセットしました。')
+				.setColor(COLORS.success)
+
+			await buttonInteraction.editReply({
+				embeds: [resultEmbed],
+				components: [],
+			})
+		} else {
+			await buttonInteraction.update({
+				content: 'リセットをキャンセルしました。',
+				embeds: [],
+				components: [],
+			})
+		}
+	} catch {
+		await interaction.editReply({
+			content: 'タイムアウトしました。リセットはキャンセルされました。',
+			embeds: [],
+			components: [],
+		})
+	}
 }
 
 const executeResetUser = async (interaction: Parameters<Command['execute']>[0]) => {

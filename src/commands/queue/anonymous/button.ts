@@ -1,16 +1,24 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
-import { MessageFlags } from 'discord.js'
-import { logger } from '@/lib/logger'
+import { MessageFlags, PermissionFlagsBits } from 'discord.js'
 import { apiClient } from '@/utils/api-client'
 import { CAPACITY } from '../shared/constants'
 import { createButtons, createClosedEmbed, createEmbed, createFullEmbed } from './embeds'
+
+// Extract creatorId from embed footer (format: "主催: {creatorId}")
+const getCreatorIdFromEmbed = (interaction: ButtonInteraction<CacheType>): string | null => {
+	const footer = interaction.message.embeds[0]?.footer?.text
+	if (!footer) return null
+	const match = footer.match(/主催: (.+)/)
+	return match?.[1] ?? null
+}
 
 export const handleJoin = async (
 	interaction: ButtonInteraction<CacheType>,
 	guildId: string,
 	queueId: string,
 ) => {
-	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players.$post({
+	// Join the queue via API (no role selection needed - server uses FILL as default)
+	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].join.$post({
 		param: { guildId, queueId },
 		json: {
 			discordId: interaction.user.id,
@@ -24,7 +32,7 @@ export const handleJoin = async (
 				? '既に参加しています。'
 				: error.message === 'Queue is full'
 					? '定員に達しています。'
-					: error.message === 'Queue is not open'
+					: error.message === 'Queue is closed'
 						? '募集は終了しています。'
 						: '参加に失敗しました。'
 
@@ -35,25 +43,14 @@ export const handleJoin = async (
 		return
 	}
 
-	// Player added successfully, now fetch updated queue info
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
-		param: { guildId, queueId },
-	})
+	const joinData = await response.json()
 
-	if (!recruitResponse.ok) {
-		logger.error('募集情報取得失敗:', recruitResponse.status)
-		await interaction.reply({
-			content: '募集情報の取得に失敗しました。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
+	// Check if match started (queue was full)
+	if (joinData.status === 'match_started') {
+		// Match was auto-created by server
+		const participantCount = Object.keys(joinData.match.teamAssignments).length
+		const fullEmbed = createFullEmbed(participantCount, joinData.creatorId ?? '不明')
 
-	const recruitData = await recruitResponse.json()
-	const participantCount = recruitData.players.length
-
-	if (recruitData.status === 'full') {
-		const fullEmbed = createFullEmbed(participantCount, recruitData.creatorId ?? '不明')
 		await interaction.update({
 			embeds: [fullEmbed],
 			components: [],
@@ -62,15 +59,18 @@ export const handleJoin = async (
 		await interaction.followUp({
 			content: '募集完了!',
 		})
-	} else {
-		const embed = createEmbed(participantCount, CAPACITY, recruitData.creatorId ?? '不明')
-		const buttons = createButtons(guildId, queueId, false)
-
-		await interaction.update({
-			embeds: [embed],
-			components: [buttons],
-		})
+		return
 	}
+
+	// Still recruiting - update embed with new count
+	const participantCount = joinData.players.length
+	const embed = createEmbed(participantCount, joinData.capacity, joinData.creatorId ?? '不明')
+	const buttons = createButtons(guildId, queueId, false)
+
+	await interaction.update({
+		embeds: [embed],
+		components: [buttons],
+	})
 }
 
 export const handleLeave = async (
@@ -78,12 +78,9 @@ export const handleLeave = async (
 	guildId: string,
 	queueId: string,
 ) => {
-	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].players[
-		':discordId'
-	].$delete({
-		param: {
-			guildId,
-			queueId,
+	const response = await apiClient.v1.guilds[':guildId'].queues[':queueId'].leave.$post({
+		param: { guildId, queueId },
+		json: {
 			discordId: interaction.user.id,
 		},
 	})
@@ -91,7 +88,7 @@ export const handleLeave = async (
 	if (!response.ok) {
 		const error = await response.json()
 		const message =
-			error.message === 'Player not found' ? '参加していません。' : 'キャンセルに失敗しました。'
+			error.message === 'Not in queue' ? '参加していません。' : 'キャンセルに失敗しました。'
 
 		await interaction.reply({
 			content: message,
@@ -100,23 +97,10 @@ export const handleLeave = async (
 		return
 	}
 
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
-		param: { guildId, queueId },
-	})
+	const leaveData = await response.json()
+	const participantCount = leaveData.players.length
 
-	if (!recruitResponse.ok) {
-		logger.error('募集情報取得失敗:', recruitResponse.status)
-		await interaction.reply({
-			content: '募集情報の取得に失敗しました。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	const recruitData = await recruitResponse.json()
-	const participantCount = recruitData.players.length
-
-	const embed = createEmbed(participantCount, CAPACITY, recruitData.creatorId ?? '不明')
+	const embed = createEmbed(participantCount, leaveData.capacity, leaveData.creatorId ?? '不明')
 	const buttons = createButtons(guildId, queueId, false)
 
 	await interaction.update({
@@ -130,60 +114,46 @@ export const handleForce = async (
 	guildId: string,
 	queueId: string,
 ) => {
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
+	// Check permissions - creator or admin
+	const creatorId = getCreatorIdFromEmbed(interaction)
+	const isCreator = creatorId === interaction.user.id
+	const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)
+
+	if (!isCreator && !isAdmin) {
+		await interaction.reply({
+			content: '強制開始できるのは主催者またはサーバー管理者のみです。',
+			flags: MessageFlags.Ephemeral,
+		})
+		return
+	}
+
+	// Call start endpoint - server handles team balancing and match creation
+	const startResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].start.$post({
 		param: { guildId, queueId },
 	})
 
-	if (!recruitResponse.ok) {
-		logger.error('募集情報取得失敗:', recruitResponse.status)
+	if (!startResponse.ok) {
+		const error = await startResponse.json()
+		const message =
+			error.message === 'Queue not found'
+				? '募集が見つかりません。'
+				: error.message === 'Queue is closed'
+					? '募集は既に終了しています。'
+					: error.message === 'Not enough players (minimum 2)'
+						? '参加者が2人未満のため開始できません。'
+						: '強制開始に失敗しました。'
+
 		await interaction.reply({
-			content: '募集情報の取得に失敗しました。',
+			content: message,
 			flags: MessageFlags.Ephemeral,
 		})
 		return
 	}
 
-	const recruitData = await recruitResponse.json()
+	const { match } = await startResponse.json()
+	const participantCount = Object.keys(match.teamAssignments).length
 
-	if (recruitData.creatorId ?? '不明' !== interaction.user.id) {
-		await interaction.reply({
-			content: '強制開始できるのは主催者のみです。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	if (recruitData.status === 'closed') {
-		await interaction.reply({
-			content: 'この募集は既に終了しています。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	if (recruitData.players.length === 0) {
-		await interaction.reply({
-			content: '参加者がいないため開始できません。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	const closeResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$delete({
-		param: { guildId, queueId },
-	})
-
-	if (!closeResponse.ok) {
-		logger.error('募集終了失敗:', closeResponse.status)
-		await interaction.reply({
-			content: '強制開始に失敗しました。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	const participantCount = recruitData.players.length
-	const fullEmbed = createFullEmbed(participantCount, recruitData.creatorId ?? '不明')
+	const fullEmbed = createFullEmbed(participantCount, creatorId ?? '不明')
 
 	await interaction.update({
 		embeds: [fullEmbed],
@@ -200,32 +170,14 @@ export const handleClose = async (
 	guildId: string,
 	queueId: string,
 ) => {
-	const recruitResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].$get({
-		param: { guildId, queueId },
-	})
+	// Check permissions - creator or admin
+	const creatorId = getCreatorIdFromEmbed(interaction)
+	const isCreator = creatorId === interaction.user.id
+	const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)
 
-	if (!recruitResponse.ok) {
-		logger.error('募集情報取得失敗:', recruitResponse.status)
+	if (!isCreator && !isAdmin) {
 		await interaction.reply({
-			content: '募集情報の取得に失敗しました。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	const recruitData = await recruitResponse.json()
-
-	if (recruitData.creatorId ?? '不明' !== interaction.user.id) {
-		await interaction.reply({
-			content: '募集を終了できるのは主催者のみです。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	if (recruitData.status === 'closed') {
-		await interaction.reply({
-			content: 'この募集は既に終了しています。',
+			content: '募集を終了できるのは主催者またはサーバー管理者のみです。',
 			flags: MessageFlags.Ephemeral,
 		})
 		return
@@ -236,16 +188,18 @@ export const handleClose = async (
 	})
 
 	if (!closeResponse.ok) {
-		logger.error('募集終了失敗:', closeResponse.status)
+		const error = await closeResponse.json()
+		const message =
+			error.message === 'Queue not found' ? '募集が見つかりません。' : '募集の終了に失敗しました。'
+
 		await interaction.reply({
-			content: '募集の終了に失敗しました。',
+			content: message,
 			flags: MessageFlags.Ephemeral,
 		})
 		return
 	}
 
-	const participantCount = recruitData.players.length
-	const closedEmbed = createClosedEmbed(participantCount, CAPACITY, recruitData.creatorId ?? '不明')
+	const closedEmbed = createClosedEmbed(0, CAPACITY, creatorId ?? '不明')
 
 	await interaction.update({
 		embeds: [closedEmbed],
