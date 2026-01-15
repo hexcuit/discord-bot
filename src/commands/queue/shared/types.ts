@@ -13,10 +13,3 @@ type TeamAssignment = {
 }
 
 export type TeamAssignments = Record<string, TeamAssignment>
-
-type RatingInfo = {
-	discordId: string
-	rating: number
-	rank: string | null
-	isPlacement: boolean | null
-}

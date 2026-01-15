@@ -2,7 +2,7 @@ import type { AutocompleteInteraction, CacheType } from 'discord.js'
 
 import { logger } from '@/lib/logger'
 
-export const handleAutocomplete = (interaction: AutocompleteInteraction<CacheType>) => {
+export const handleAutocomplete = async (interaction: AutocompleteInteraction<CacheType>) => {
 	const command = interaction.client.commands.get(interaction.commandName)
 	if (!command) {
 		return
@@ -11,7 +11,7 @@ export const handleAutocomplete = (interaction: AutocompleteInteraction<CacheTyp
 		if (!command.autocomplete) {
 			return
 		}
-		command.autocomplete(interaction)
+		await command.autocomplete(interaction)
 	} catch (error) {
 		logger.error(error)
 	}

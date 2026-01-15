@@ -15,5 +15,6 @@
 	"files.readonlyInclude": {
 		"**/commands/index.ts": true,
 		"**/events/index.ts": true
-	}
+	},
+	"oxc.enable": false
 }

@@ -101,25 +101,25 @@ const logToConsole = (level: LogLevel, message: string): void => {
 }
 
 export const logger: Record<LogLevel, (...args: unknown[]) => void> = {
-	error: (...args) => {
+	error: async (...args) => {
 		const message = formatArgs(args)
 		logToConsole('error', message)
 		if (WEBHOOK_LEVELS.includes('error')) {
-			sendToWebhook('error', message)
+			await sendToWebhook('error', message)
 		}
 	},
-	warn: (...args) => {
+	warn: async (...args) => {
 		const message = formatArgs(args)
 		logToConsole('warn', message)
 		if (WEBHOOK_LEVELS.includes('warn')) {
-			sendToWebhook('warn', message)
+			await sendToWebhook('warn', message)
 		}
 	},
-	info: (...args) => {
+	info: async (...args) => {
 		const message = formatArgs(args)
 		logToConsole('info', message)
 		if (WEBHOOK_LEVELS.includes('info')) {
-			sendToWebhook('info', message)
+			await sendToWebhook('info', message)
 		}
 	},
 	log: (...args) => {

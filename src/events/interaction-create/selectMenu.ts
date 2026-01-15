@@ -2,7 +2,7 @@ import type { CacheType, StringSelectMenuInteraction } from 'discord.js'
 
 import { logger } from '@/lib/logger'
 
-export const handleSelectMenu = (interaction: StringSelectMenuInteraction<CacheType>) => {
+export const handleSelectMenu = async (interaction: StringSelectMenuInteraction<CacheType>) => {
 	const [commandName] = interaction.customId.split(':')
 	if (!commandName) {
 		return
@@ -15,7 +15,7 @@ export const handleSelectMenu = (interaction: StringSelectMenuInteraction<CacheT
 		if (!command.selectMenu) {
 			return
 		}
-		command.selectMenu(interaction)
+		await command.selectMenu(interaction)
 	} catch (error) {
 		logger.error(error)
 	}

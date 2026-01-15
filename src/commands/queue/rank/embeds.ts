@@ -1,11 +1,4 @@
-import {
-	ActionRowBuilder,
-	ButtonBuilder,
-	ButtonStyle,
-	EmbedBuilder,
-	StringSelectMenuBuilder,
-	StringSelectMenuOptionBuilder,
-} from 'discord.js'
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js'
 
 import { COLORS, ROLE_EMOJI } from '@/config'
 import {
@@ -73,23 +66,6 @@ export const createRankedButtons = (guildId: string, queueId: string, disabled: 
 			.setLabel('募集終了')
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(disabled),
-	)
-}
-
-const createRoleSelectMenu = (guildId: string, queueId: string, type: 'main' | 'sub') => {
-	const options = LOL_ROLES.map((role) =>
-		new StringSelectMenuOptionBuilder()
-			.setLabel(ROLE_LABELS[role])
-			.setValue(role)
-			.setEmoji(ROLE_EMOJI[role])
-			.setDescription(type === 'main' ? 'メインロールとして選択' : 'サブロールとして選択'),
-	)
-
-	return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-		new StringSelectMenuBuilder()
-			.setCustomId(`queue:select_${type}_role:${guildId}:${queueId}`)
-			.setPlaceholder(type === 'main' ? 'メインロールを選択' : 'サブロールを選択')
-			.addOptions(options),
 	)
 }
 

@@ -8,8 +8,10 @@
 		"dev": "bun --hot src/index.ts",
 		"build": "bun build src/index.ts scripts/deploy-commands.ts --outdir=dist --target=bun",
 		"start": "bun dist/src/index.js",
-		"check": "biome check",
-		"check:fix": "biome check --fix --unsafe",
+		"check": "bun run lint && bun run format && bun run knip",
+		"check:fix": "bun run lint:fix && bun run format:fix && bun run knip:fix",
+		"lint": "oxlint --type-aware --type-check",
+		"lint:fix": "oxlint --fix --type-aware --type-check",
 		"typecheck": "tsc --noEmit",
 		"format": "oxfmt --check",
 		"format:fix": "oxfmt",
@@ -32,6 +34,8 @@
 		"knip": "5.81.0",
 		"lefthook": "2.0.15",
 		"oxfmt": "0.24.0",
+		"oxlint": "1.39.0",
+		"oxlint-tsgolint": "0.11.0",
 		"typescript": "5.9.3"
 	}
 }
