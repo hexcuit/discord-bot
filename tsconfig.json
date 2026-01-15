@@ -28,7 +28,8 @@
 
 		// Path aliases
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@test/*": ["./mocks/*"]
 		}
 	},
 	"include": ["src/**/*", "scripts/**/*", "mocks/**/*"],
