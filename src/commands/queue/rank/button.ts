@@ -1,30 +1,17 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
-import {
-	ActionRowBuilder,
-	ButtonBuilder,
-	ButtonStyle,
-	MessageFlags,
-	PermissionFlagsBits,
-} from 'discord.js'
-import type { LolRole } from '@/constants'
+import { MessageFlags, PermissionFlagsBits } from 'discord.js'
+import type { RolePreference } from '@/constants'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
-import { CAPACITY } from '../shared/constants'
+import { CAPACITY, ROLE_LABELS } from '../shared/constants'
 import {
 	createMatchEmbed,
 	createRankedButtons,
 	createRankedClosedEmbed,
 	createRankedEmbed,
-	createRoleSelectMenu,
+	createRoleButtons,
 	createVoteButtons,
 } from './embeds'
-
-// Temporary storage for pending role selections (before join is confirmed)
-// Key: `${queueId}:${discordId}`, Value: { mainRole, subRole }
-export const pendingRoleSelections = new Map<
-	string,
-	{ mainRole: LolRole | null; subRole: LolRole | null }
->()
 
 // Extract creatorId from embed footer (format: "主催: {creatorId}")
 const getCreatorIdFromEmbed = (interaction: ButtonInteraction<CacheType>): string | null => {
@@ -39,75 +26,35 @@ export const handleRankJoin = async (
 	guildId: string,
 	queueId: string,
 ) => {
-	// Initialize pending role selection
-	const pendingKey = `${queueId}:${interaction.user.id}`
-	pendingRoleSelections.set(pendingKey, { mainRole: null, subRole: null })
-
-	// Show role selection UI (validation happens on confirm)
-	const mainRoleSelect = createRoleSelectMenu(guildId, queueId, 'main')
-	const subRoleSelect = createRoleSelectMenu(guildId, queueId, 'sub')
 	const originalMessageId = interaction.message.id
+	const roleButtons = createRoleButtons(guildId, queueId, originalMessageId, 'main')
 
 	await interaction.reply({
-		content: 'ロールを選択してください。\n選択後、「参加確定」ボタンを押してください。',
-		components: [
-			mainRoleSelect,
-			subRoleSelect,
-			new ActionRowBuilder<ButtonBuilder>().addComponents(
-				new ButtonBuilder()
-					.setCustomId(`queue:confirm_rank_join:${guildId}:${queueId}:${originalMessageId}`)
-					.setLabel('参加確定')
-					.setStyle(ButtonStyle.Success),
-			),
-		],
+		content: '**メインロール**を選択してください',
+		components: roleButtons,
 		flags: MessageFlags.Ephemeral,
 	})
 }
 
-export const handleConfirmRankJoin = async (
+/**
+ * キューに参加する共通処理
+ */
+const joinQueue = async (
 	interaction: ButtonInteraction<CacheType>,
 	guildId: string,
 	queueId: string,
-	originalMessageId: string | undefined,
+	originalMessageId: string,
+	mainRole: RolePreference,
+	subRole: RolePreference,
 ) => {
-	if (!originalMessageId) {
-		await interaction.update({
-			content: 'エラー: 元のメッセージが見つかりません。',
-			components: [],
-		})
-		return
-	}
-
-	const pendingKey = `${queueId}:${interaction.user.id}`
-	const pendingRoles = pendingRoleSelections.get(pendingKey)
-
-	if (!pendingRoles) {
-		await interaction.update({
-			content: 'エラー: ロール選択情報が見つかりません。もう一度参加ボタンを押してください。',
-			components: [],
-		})
-		return
-	}
-
-	if (!pendingRoles.mainRole || !pendingRoles.subRole) {
-		await interaction.reply({
-			content: 'メインロールとサブロールの両方を選択してください。',
-			flags: MessageFlags.Ephemeral,
-		})
-		return
-	}
-
-	// Join the queue via API
 	const joinResponse = await apiClient.v1.guilds[':guildId'].queues[':queueId'].join.$post({
 		param: { guildId, queueId },
 		json: {
 			discordId: interaction.user.id,
-			mainRole: pendingRoles.mainRole,
-			subRole: pendingRoles.subRole,
+			mainRole,
+			subRole,
 		},
 	})
-
-	pendingRoleSelections.delete(pendingKey)
 
 	if (!joinResponse.ok) {
 		const error = await joinResponse.json()
@@ -130,7 +77,7 @@ export const handleConfirmRankJoin = async (
 	const joinData = await joinResponse.json()
 
 	await interaction.update({
-		content: '参加しました！',
+		content: `✅ 参加しました！\nメイン: **${ROLE_LABELS[mainRole]}** / サブ: **${ROLE_LABELS[subRole]}**`,
 		components: [],
 	})
 
@@ -144,19 +91,16 @@ export const handleConfirmRankJoin = async (
 
 	// Check if match started (queue was full)
 	if (joinData.status === 'match_started') {
-		// Match was auto-created by server
 		const { match } = joinData
 		const matchEmbed = createMatchEmbed(match.teamAssignments, 0, 0, 0, 6)
 		const voteButtons = createVoteButtons(match.id)
 
-		// Update original message to show closed state
 		const closedEmbed = createRankedClosedEmbed([], CAPACITY, joinData.creatorId ?? '不明')
 		await originalMessage.edit({
 			embeds: [closedEmbed],
 			components: [],
 		})
 
-		// Send match message
 		if (originalMessage.channel.isSendable()) {
 			const mentions = Object.keys(match.teamAssignments)
 				.map((id) => `<@${id}>`)
@@ -178,6 +122,48 @@ export const handleConfirmRankJoin = async (
 		embeds: [embed],
 		components: [buttons],
 	})
+}
+
+/**
+ * ロール選択ボタンのハンドラー
+ * メイン選択時: FILLなら即参加、それ以外はサブ選択画面へ遷移
+ * サブ選択時: 自動的にキューに参加
+ */
+export const handleRoleSelect = async (
+	interaction: ButtonInteraction<CacheType>,
+	guildId: string,
+	queueId: string,
+	originalMessageId: string,
+	type: 'main' | 'sub',
+	role: RolePreference,
+	mainRole?: RolePreference,
+) => {
+	if (type === 'main') {
+		// メインでFILLを選択した場合はサブ選択をスキップして即参加
+		if (role === 'FILL') {
+			await joinQueue(interaction, guildId, queueId, originalMessageId, 'FILL', 'FILL')
+			return
+		}
+
+		// メイン選択完了 → サブ選択へ
+		const roleButtons = createRoleButtons(guildId, queueId, originalMessageId, 'sub', role)
+		await interaction.update({
+			content: `メイン: **${ROLE_LABELS[role]}**\n\n**サブロール**を選択してください`,
+			components: roleButtons,
+		})
+		return
+	}
+
+	// サブ選択完了 → 自動的に参加
+	if (!mainRole) {
+		await interaction.update({
+			content: 'エラー: メインロールが見つかりません。もう一度参加ボタンを押してください。',
+			components: [],
+		})
+		return
+	}
+
+	await joinQueue(interaction, guildId, queueId, originalMessageId, mainRole, role)
 }
 
 export const handleRankLeave = async (

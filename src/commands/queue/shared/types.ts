@@ -1,9 +1,9 @@
-import type { LolRole, LolTeam } from '@/constants'
+import type { LolRole, LolTeam, RolePreference } from '@/constants'
 
 export type Participant = {
 	discordId: string
-	mainRole?: LolRole | null
-	subRole?: LolRole | null
+	mainRole: RolePreference
+	subRole: RolePreference
 }
 
 export type TeamAssignment = {

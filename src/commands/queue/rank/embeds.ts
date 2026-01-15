@@ -7,7 +7,14 @@ import {
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
 import { COLORS, ROLE_EMOJI } from '@/config'
-import { LOL_ROLES, type LolRole, type LolTeam, type MatchResult } from '@/constants'
+import {
+	LOL_ROLES,
+	type LolRole,
+	type LolTeam,
+	type MatchResult,
+	ROLE_PREFERENCES,
+	type RolePreference,
+} from '@/constants'
 import { ROLE_LABELS } from '../shared/constants'
 import type { Participant, TeamAssignments } from '../shared/types'
 import { formatRole } from '../shared/utils'
@@ -81,6 +88,43 @@ export const createRoleSelectMenu = (guildId: string, queueId: string, type: 'ma
 			.setPlaceholder(type === 'main' ? 'メインロールを選択' : 'サブロールを選択')
 			.addOptions(options),
 	)
+}
+
+/**
+ * ロール選択ボタンを作成
+ * @param guildId - ギルドID
+ * @param queueId - キューID
+ * @param originalMessageId - 元のメッセージID
+ * @param type - 'main' | 'sub' 選択中のロールタイプ
+ * @param selectedMainRole - 選択済みのメインロール（サブ選択時に無効化用）
+ */
+export const createRoleButtons = (
+	guildId: string,
+	queueId: string,
+	originalMessageId: string,
+	type: 'main' | 'sub',
+	selectedMainRole?: RolePreference,
+) => {
+	const buttons = ROLE_PREFERENCES.map((role) => {
+		const isDisabled = type === 'sub' && role === selectedMainRole
+		// sub選択時はmainRoleもcustomIdに含める
+		const customId =
+			type === 'sub'
+				? `queue:select_role:${guildId}:${queueId}:${originalMessageId}:${type}:${role}:${selectedMainRole}`
+				: `queue:select_role:${guildId}:${queueId}:${originalMessageId}:${type}:${role}`
+		return new ButtonBuilder()
+			.setCustomId(customId)
+			.setLabel(ROLE_LABELS[role])
+			.setEmoji(ROLE_EMOJI[role])
+			.setStyle(isDisabled ? ButtonStyle.Secondary : ButtonStyle.Primary)
+			.setDisabled(isDisabled)
+	})
+
+	// 6ボタンを2行に分割 (3+3)
+	return [
+		new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(0, 3)),
+		new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(3, 6)),
+	]
 }
 
 export const createMatchEmbed = (

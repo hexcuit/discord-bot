@@ -14,17 +14,19 @@ import {
 	handleLeave as handleCreateLeave,
 } from './create/button'
 import {
-	handleConfirmRankJoin,
 	handleRankClose,
 	handleRankForce,
 	handleRankJoin,
 	handleRankLeave,
+	handleRoleSelect,
 } from './rank/button'
 import { handleVote, handleVoteDraw } from './rank/vote'
 import { parseCustomId } from './shared/utils'
 
 export const handleButton = async (interaction: ButtonInteraction<CacheType>) => {
-	const { action, guildId, queueId, originalMessageId } = parseCustomId(interaction.customId)
+	const { action, guildId, queueId, originalMessageId, roleType, role, mainRole } = parseCustomId(
+		interaction.customId,
+	)
 
 	// Vote actions use matchId (in guildId position for old format)
 	const isVoteAction = action?.startsWith('vote_')
@@ -105,8 +107,18 @@ export const handleButton = async (interaction: ButtonInteraction<CacheType>) =>
 			case 'rank_join':
 				await handleRankJoin(interaction, guildId, queueId)
 				break
-			case 'confirm_rank_join':
-				await handleConfirmRankJoin(interaction, guildId, queueId, originalMessageId)
+			case 'select_role':
+				if (originalMessageId && roleType && role) {
+					await handleRoleSelect(
+						interaction,
+						guildId,
+						queueId,
+						originalMessageId,
+						roleType,
+						role,
+						mainRole,
+					)
+				}
 				break
 			case 'rank_leave':
 				await handleRankLeave(interaction, guildId, queueId)

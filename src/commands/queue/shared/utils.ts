@@ -1,5 +1,5 @@
 import { ROLE_EMOJI } from '@/config'
-import type { LolRole } from '@/constants'
+import type { RolePreference } from '@/constants'
 import { ROLE_LABELS } from './constants'
 
 export const parseCustomId = (customId: string) => {
@@ -10,10 +10,14 @@ export const parseCustomId = (customId: string) => {
 		guildId: parts[2],
 		queueId: parts[3],
 		originalMessageId: parts[4],
+		// ロール選択ボタン用の追加パラメータ
+		roleType: parts[5] as 'main' | 'sub' | undefined,
+		role: parts[6] as RolePreference | undefined,
+		mainRole: parts[7] as RolePreference | undefined, // sub選択時のみ
 	}
 }
 
-export const formatRole = (role: LolRole | null | undefined): string => {
+export const formatRole = (role: RolePreference | null | undefined): string => {
 	if (!role) return '-'
 	return `${ROLE_EMOJI[role]} ${ROLE_LABELS[role]}`
 }

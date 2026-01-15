@@ -4,7 +4,6 @@ import { executeAnonymous } from './anonymous/index'
 import { handleButton } from './button'
 import { executeCreate } from './create/index'
 import { executeRank } from './rank/index'
-import { handleSelectMenu } from './select-menu'
 
 export default {
 	command: new SlashCommandBuilder()
@@ -51,6 +50,4 @@ export default {
 	},
 
 	button: handleButton,
-
-	selectMenu: handleSelectMenu,
 } satisfies Command
