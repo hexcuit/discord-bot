@@ -6,7 +6,7 @@ export type Participant = {
 	subRole: RolePreference
 }
 
-export type TeamAssignment = {
+type TeamAssignment = {
 	team: LolTeam
 	role: LolRole
 	rating: number
@@ -14,7 +14,7 @@ export type TeamAssignment = {
 
 export type TeamAssignments = Record<string, TeamAssignment>
 
-export type RatingInfo = {
+type RatingInfo = {
 	discordId: string
 	rating: number
 	rank: string | null

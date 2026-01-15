@@ -7,9 +7,7 @@ const ERROR_MESSAGES = {
 	INSUFFICIENT_MEMBERS: 'チーム分けには最低2人必要です。',
 } as const
 
-export { ERROR_MESSAGES }
-
-export function validateUserAccess(member: unknown): {
+function validateUserAccess(member: unknown): {
 	isValid: boolean
 	member?: GuildMember
 	error?: string
@@ -26,7 +24,7 @@ export function validateUserAccess(member: unknown): {
 	return { isValid: true, member }
 }
 
-export function parseExcludedUserIds(input?: string | null): string[] {
+function parseExcludedUserIds(input?: string | null): string[] {
 	if (!input) {
 		return []
 	}

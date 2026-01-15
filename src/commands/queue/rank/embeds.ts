@@ -73,7 +73,7 @@ export const createRankedButtons = (guildId: string, queueId: string, disabled: 
 	)
 }
 
-export const createRoleSelectMenu = (guildId: string, queueId: string, type: 'main' | 'sub') => {
+const createRoleSelectMenu = (guildId: string, queueId: string, type: 'main' | 'sub') => {
 	const options = LOL_ROLES.map((role) =>
 		new StringSelectMenuOptionBuilder()
 			.setLabel(ROLE_LABELS[role])
