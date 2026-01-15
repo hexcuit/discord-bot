@@ -6,6 +6,7 @@ import {
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 } from 'discord.js'
+
 import { COLORS, ROLE_EMOJI } from '@/config'
 import {
 	LOL_ROLES,
@@ -15,8 +16,10 @@ import {
 	ROLE_PREFERENCES,
 	type RolePreference,
 } from '@/constants'
-import { ROLE_LABELS } from '../shared/constants'
+
 import type { Participant, TeamAssignments } from '../shared/types'
+
+import { ROLE_LABELS } from '../shared/constants'
 import { formatRole } from '../shared/utils'
 
 export const createRankedEmbed = (

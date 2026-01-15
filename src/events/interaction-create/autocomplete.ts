@@ -1,4 +1,5 @@
 import type { AutocompleteInteraction, CacheType } from 'discord.js'
+
 import { logger } from '@/lib/logger'
 
 export const handleAutocomplete = (interaction: AutocompleteInteraction<CacheType>) => {

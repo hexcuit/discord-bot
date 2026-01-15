@@ -1,5 +1,7 @@
 import type { Client } from 'discord.js'
+
 import { ActivityType } from 'discord.js'
+
 import packages from '../../package.json'
 
 export const updateActivity = (client: Client<true>) => {

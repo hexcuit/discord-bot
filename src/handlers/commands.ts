@@ -1,7 +1,9 @@
 import { Collection } from 'discord.js'
+
+import type { Command } from '@/types/command'
+
 import * as commands from '@/commands'
 import { logger } from '@/lib/logger'
-import type { Command } from '@/types/command'
 
 type CommandData = {
 	name: string

@@ -9,8 +9,10 @@ import {
 	PermissionFlagsBits,
 	SlashCommandBuilder,
 } from 'discord.js'
-import { COLORS } from '@/config'
+
 import type { Command } from '@/types/command'
+
+import { COLORS } from '@/config'
 import { apiClient } from '@/utils/api-client'
 
 const CONFIRM_TIMEOUT = 30000 // 30 seconds

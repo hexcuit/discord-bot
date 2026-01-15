@@ -1,5 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js'
+
 import { COLORS } from '@/config'
+
 import { CAPACITY } from '../shared/constants'
 
 export const createEmbed = (participants: string[], capacity: number, creatorId: string) => {

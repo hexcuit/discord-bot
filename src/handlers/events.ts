@@ -1,7 +1,9 @@
 import { type Client, Events } from 'discord.js'
+
+import type { Event } from '@/types/event'
+
 import * as events from '@/events'
 import { logger } from '@/lib/logger'
-import type { Event } from '@/types/event'
 
 type RawEvent = {
 	name: string

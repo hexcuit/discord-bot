@@ -1,5 +1,7 @@
 import { Events } from 'discord.js'
+
 import type { Event } from '@/types/event'
+
 import { handleAutocomplete } from './autocomplete'
 import { handleButton } from './button'
 import { handleChatInputCommand } from './chat-input-command'

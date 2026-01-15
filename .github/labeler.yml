@@ -3,62 +3,62 @@
 # Area labels
 area/lib:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/lib/**
+      - any-glob-to-any-file:
+          - src/lib/**
 
 area/commands:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/commands/**
+      - any-glob-to-any-file:
+          - src/commands/**
 
 area/events:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/events/**
+      - any-glob-to-any-file:
+          - src/events/**
 
 area/handlers:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/handlers/**
+      - any-glob-to-any-file:
+          - src/handlers/**
 
 area/types:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/types/**
+      - any-glob-to-any-file:
+          - src/types/**
 
 area/utils:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/utils/**
+      - any-glob-to-any-file:
+          - src/utils/**
 
 area/constants:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/constants/**
+      - any-glob-to-any-file:
+          - src/constants/**
 
 area/config:
   - changed-files:
-    - any-glob-to-any-file:
-      - src/config/**
-      - tsconfig.json
-      - biome.jsonc
-      - bunfig.toml
-      - lefthook.json
+      - any-glob-to-any-file:
+          - src/config/**
+          - tsconfig.json
+          - biome.jsonc
+          - bunfig.toml
+          - lefthook.json
 
 area/workflows:
   - changed-files:
-    - any-glob-to-any-file:
-      - .github/workflows/**
-      - .github/labeler.yml
+      - any-glob-to-any-file:
+          - .github/workflows/**
+          - .github/labeler.yml
 
 # Type labels
 type/docs:
   - changed-files:
-    - any-glob-to-any-file:
-      - '**/*.md'
+      - any-glob-to-any-file:
+          - '**/*.md'
 
 type/dependencies:
   - changed-files:
-    - any-glob-to-any-file:
-      - package.json
-      - bun.lock
+      - any-glob-to-any-file:
+          - package.json
+          - bun.lock

@@ -4,8 +4,10 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from 'discord.js'
-import { logger } from '@/lib/logger'
+
 import type { Command } from '@/types/command'
+
+import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 
 export default {

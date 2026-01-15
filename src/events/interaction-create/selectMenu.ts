@@ -1,4 +1,5 @@
 import type { CacheType, StringSelectMenuInteraction } from 'discord.js'
+
 import { logger } from '@/lib/logger'
 
 export const handleSelectMenu = (interaction: StringSelectMenuInteraction<CacheType>) => {

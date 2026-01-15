@@ -1,7 +1,9 @@
 import { type ChatInputCommandInteraction, EmbedBuilder, type GuildMember } from 'discord.js'
+
 import { COLORS, RANK_EMOJI } from '@/config'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
+
 import { getFilteredMembers } from './shared'
 
 // 型定義

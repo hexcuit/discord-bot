@@ -1,4 +1,5 @@
 import { REST, Routes } from 'discord.js'
+
 import { loadCommands } from '@/handlers/commands'
 import { logger } from '@/lib/logger'
 

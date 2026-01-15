@@ -1,8 +1,12 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
+
 import { MessageFlags, PermissionFlagsBits } from 'discord.js'
+
 import type { RolePreference } from '@/constants'
+
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
+
 import { CAPACITY, ROLE_LABELS } from '../shared/constants'
 import {
 	createMatchEmbed,

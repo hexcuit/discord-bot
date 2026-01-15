@@ -50,8 +50,8 @@ jobs:
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
         with:
           version: bun run version
-          commit: "ci: release"
-          title: "ci: release"
+          commit: 'ci: release'
+          title: 'ci: release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -117,8 +117,8 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "docker-compose.yml"
-          target: "/opt/hexcuit-discord-bot/"
+          source: 'docker-compose.yml'
+          target: '/opt/hexcuit-discord-bot/'
 
       - name: Create .env file on VPS
         if: steps.version_check.outputs.version_changed == 'true'

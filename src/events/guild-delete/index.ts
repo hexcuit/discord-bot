@@ -1,6 +1,8 @@
 import { Events } from 'discord.js'
-import { updateActivity } from '@/lib/update-activity'
+
 import type { Event } from '@/types/event'
+
+import { updateActivity } from '@/lib/update-activity'
 
 export default {
 	name: Events.GuildDelete,

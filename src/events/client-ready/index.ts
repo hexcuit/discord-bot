@@ -1,7 +1,9 @@
 import { Events } from 'discord.js'
+
+import type { Event } from '@/types/event'
+
 import { logger } from '@/lib/logger'
 import { updateActivity } from '@/lib/update-activity'
-import type { Event } from '@/types/event'
 
 export default {
 	name: Events.ClientReady,

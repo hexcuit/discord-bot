@@ -1,5 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js'
+
 import type { Command } from '@/types/command'
+
 import { executeBalance } from './balance'
 import { executeRandom } from './random'
 

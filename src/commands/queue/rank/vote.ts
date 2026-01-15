@@ -1,8 +1,13 @@
 import type { ButtonInteraction, CacheType } from 'discord.js'
+
 import { MessageFlags } from 'discord.js'
+
 import type { VoteOption } from '@/constants'
+
 import { apiClient } from '@/utils/api-client'
+
 import type { TeamAssignments } from '../shared/types'
+
 import { createMatchEmbed, createMatchResultEmbed, createVoteButtons } from './embeds'
 
 export const handleVote = async (

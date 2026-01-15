@@ -1,5 +1,7 @@
-import { ROLE_EMOJI } from '@/config'
 import type { RolePreference } from '@/constants'
+
+import { ROLE_EMOJI } from '@/config'
+
 import { ROLE_LABELS } from './constants'
 
 export const parseCustomId = (customId: string) => {

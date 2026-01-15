@@ -1,17 +1,19 @@
 {
 	"$schema": "./node_modules/lefthook/schema.json",
 	"pre-commit": {
-		"parallel": true,
-		"commands": {
-			"check": {
-				"glob": "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}",
-				"run": "bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}",
-				"stage_fixed": true
-			},
-			"generate": {
+		"piped": true,
+		"jobs": [
+			{
+				"name": "generate-barrels.ts",
 				"glob": "src/{commands,events}/**/*",
-				"run": "bun run generate && git add src/commands/index.ts src/events/index.ts"
+				"run": "bun scripts/generate-barrels.ts --fix && git add src/commands/index.ts src/events/index.ts"
+			},
+			{
+				"name": "oxfmt",
+				"glob": "*",
+				"run": "bun oxfmt --no-error-on-unmatched-pattern {staged_files}",
+				"stage_fixed": true
 			}
-		}
+		]
 	}
 }

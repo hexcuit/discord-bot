@@ -1,4 +1,5 @@
 import type { CacheType, ChatInputCommandInteraction } from 'discord.js'
+
 import { logger } from '@/lib/logger'
 
 export const handleChatInputCommand = async (
