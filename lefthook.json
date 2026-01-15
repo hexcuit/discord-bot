@@ -9,6 +9,12 @@
 				"run": "bun scripts/generate-barrels.ts --fix && git add src/commands/index.ts src/events/index.ts"
 			},
 			{
+				"name": "oxlint",
+				"glob": "*.{js,ts,cjs,mjs,jsx,tsx}",
+				"run": "bun oxlint --fix --max-warnings=0 --type-aware --type-check {staged_files}",
+				"stage_fixed": true
+			},
+			{
 				"name": "oxfmt",
 				"glob": "*",
 				"run": "bun oxfmt --no-error-on-unmatched-pattern {staged_files}",
