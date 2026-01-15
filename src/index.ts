@@ -11,7 +11,7 @@ const main = () => {
 
 	loadEvents(client)
 
-	client.login(import.meta.env.DISCORD_TOKEN)
+	client.login(process.env.DISCORD_TOKEN)
 }
 
 main()

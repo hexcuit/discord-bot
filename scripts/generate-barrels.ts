@@ -14,7 +14,7 @@ import { glob, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 const FIX_MODE = process.argv.includes('--fix')
-const SRC_DIR = join(import.meta.dir, '../src')
+const SRC_DIR = join(import.meta.dirname, '../src')
 
 // ANSI colors
 const c = {
@@ -81,7 +81,7 @@ async function main() {
 	let hasChanges = false
 
 	for (const config of configs) {
-		const outputPath = join(import.meta.dir, '..', config.outputFile)
+		const outputPath = join(import.meta.dirname, '..', config.outputFile)
 		const { content, modules } = await generateBarrel(config)
 
 		let existing = ''

@@ -8,20 +8,20 @@ interface DeploymentConfig {
 }
 
 const getDeploymentConfig = (): DeploymentConfig => {
-	const isDev = import.meta.env.NODE_ENV === 'development'
+	const isDev = process.env.NODE_ENV === 'development'
 
-	if (!isDev || !import.meta.env.DISCORD_GUILD_ID) {
+	if (!isDev || !process.env.DISCORD_GUILD_ID) {
 		return {
 			scope: 'global',
-			route: Routes.applicationCommands(import.meta.env.DISCORD_CLIENT_ID),
+			route: Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
 		}
 	}
 
 	return {
 		scope: 'guild',
 		route: Routes.applicationGuildCommands(
-			import.meta.env.DISCORD_CLIENT_ID,
-			import.meta.env.DISCORD_GUILD_ID,
+			process.env.DISCORD_CLIENT_ID,
+			process.env.DISCORD_GUILD_ID,
 		),
 	}
 }
@@ -41,7 +41,7 @@ const deployCommands = async (): Promise<void> => {
 	logger.info(`Deploying ${commands.length} commands to ${config.scope} scope`)
 
 	try {
-		const rest = new REST({ version: '10' }).setToken(import.meta.env.DISCORD_TOKEN)
+		const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN)
 		await rest.put(config.route, { body: commands })
 
 		logger.info(`Successfully deployed ${commands.length} commands to ${config.scope} scope`)

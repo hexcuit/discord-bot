@@ -55,12 +55,12 @@ const formatArgs = (args: unknown[]): string => {
 let webhookClient: WebhookClient | null = null
 
 const initWebhook = (): void => {
-	if (import.meta.env.NODE_ENV === 'development') {
+	if (process.env.NODE_ENV === 'development') {
 		console.warn('[Webhook] Disabled in development environment')
 		return
 	}
 
-	const webhookUrl = import.meta.env.DISCORD_LOG_WEBHOOK_URL
+	const webhookUrl = process.env.DISCORD_LOG_WEBHOOK_URL
 	if (!webhookUrl) {
 		console.warn('[Webhook] DISCORD_LOG_WEBHOOK_URL is not set')
 		return
