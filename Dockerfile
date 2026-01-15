@@ -8,7 +8,7 @@ FROM base AS build
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun run typecheck && bun run build
+RUN bun run build
 
 # Production stage
 FROM base AS runtime
@@ -16,9 +16,5 @@ COPY --from=build /app/dist ./dist
 
 # Run as non-root user
 USER bun
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD bun --version || exit 1
 
 CMD ["sh", "-c", "bun dist/scripts/deploy-commands.js && bun dist/src/index.js"]

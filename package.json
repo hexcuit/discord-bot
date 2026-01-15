@@ -18,10 +18,9 @@
 		"knip:fix": "knip --fix",
 		"test": "bun test",
 		"test:coverage": "bun test --coverage",
-		"generate:barrels": "bun scripts/generate-barrels.ts --fix",
-		"deploy:commands": "bun scripts/deploy-commands.ts",
 		"changeset": "changeset",
-		"version": "changeset version && bun scripts/fix-canary-deps.ts && bun i --lockfile-only"
+		"generate:barrels": "bun scripts/generate-barrels.ts --fix",
+		"deploy:commands": "bun scripts/deploy-commands.ts"
 	},
 	"dependencies": {
 		"@hexcuit/server": "0.11.1",
