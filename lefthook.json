@@ -21,5 +21,24 @@
 				"stage_fixed": true
 			}
 		]
+	},
+	"pre-push": {
+		"parallel": true,
+		"jobs": [
+			{
+				"name": "knip",
+				"run": "bun run knip"
+			},
+			{
+				"name": "lockfile-sync-check",
+				"glob": "{package.json,bun.lock}",
+				"run": "bun install --frozen-lockfile"
+			},
+			{
+				"name": "lint-on-lockfile-change",
+				"glob": "bun.lock",
+				"run": "bun run lint"
+			}
+		]
 	}
 }
