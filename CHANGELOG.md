@@ -1,5 +1,11 @@
 # @hexcuit/discord-bot
 
+## 0.11.2
+
+### Patch Changes
+
+- [#71](https://github.com/hexcuit/discord-bot/pull/71) [`0984678`](https://github.com/hexcuit/discord-bot/commit/09846780b1ff4275499558d3f571ec64640113b3) Thanks [@11gather11](https://github.com/11gather11)! - Fix role selection button customId exceeding Discord's 100 character limit by using shortened format
+
 ## 0.11.1
 
 ### Patch Changes
