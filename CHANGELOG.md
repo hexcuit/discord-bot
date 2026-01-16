@@ -1,5 +1,11 @@
 # @hexcuit/discord-bot
 
+## 0.11.1
+
+### Patch Changes
+
+- [#69](https://github.com/hexcuit/discord-bot/pull/69) [`bf4e6a4`](https://github.com/hexcuit/discord-bot/commit/bf4e6a46e284314bf2fce034d9becec802d09f17) Thanks [@11gather11](https://github.com/11gather11)! - fix: changesets/action の version コマンドで && が使えない問題を修正
+
 ## 0.11.0
 
 ### Minor Changes
