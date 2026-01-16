@@ -1,5 +1,11 @@
 # @hexcuit/discord-bot
 
+## 0.11.3
+
+### Patch Changes
+
+- [#73](https://github.com/hexcuit/discord-bot/pull/73) [`c687219`](https://github.com/hexcuit/discord-bot/commit/c687219bac1cab3dd844f98bf298ed9c145d40cb) Thanks [@11gather11](https://github.com/11gather11)! - Fix role selection button routing by using 'queue' instead of 'q' in customId
+
 ## 0.11.2
 
 ### Patch Changes
