@@ -23,7 +23,7 @@
 		"deploy:commands": "bun scripts/deploy-commands.ts"
 	},
 	"dependencies": {
-		"@hexcuit/server": "0.12.1",
+		"@hexcuit/server": "0.12.2",
 		"discord.js": "14.25.1"
 	},
 	"devDependencies": {

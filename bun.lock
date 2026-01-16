@@ -5,7 +5,7 @@
     "": {
       "name": "@hexcuit/discord-bot",
       "dependencies": {
-        "@hexcuit/server": "0.12.1",
+        "@hexcuit/server": "0.12.2",
         "discord.js": "14.25.1",
       },
       "devDependencies": {
@@ -145,7 +145,7 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.27.2", "", { "os": "win32", "cpu": "x64" }, "sha512-sRdU18mcKf7F+YgheI/zGf5alZatMUTKj/jNS6l744f9u3WFu4v7twcUI9vu4mknF4Y9aDlblIie0IM+5xxaqQ=="],
 
-    "@hexcuit/server": ["@hexcuit/server@0.12.1", "", { "dependencies": { "@hono/zod-openapi": "1.2.0", "hono": "4.11.4" } }, "sha512-WL6fXF9MwEsnYTowLVNAxLbm1SDROou5eX64xJJrSyJSZntvrrWZdGK7JZb4aCBv40/WlMBJOV2M+18+FDJmOQ=="],
+    "@hexcuit/server": ["@hexcuit/server@0.12.2", "", { "dependencies": { "@hono/zod-openapi": "1.2.0", "hono": "4.11.4" } }, "sha512-lx77UfYBtYfXoYMyz8Y6BrlH0XtwEktPcSjCeOU34mZEJQlJSf7kt512c3b1N/YIdOeC8bGVVmH9SOG/f+o6BQ=="],
 
     "@hono/zod-openapi": ["@hono/zod-openapi@1.2.0", "", { "dependencies": { "@asteasolutions/zod-to-openapi": "^8.1.0", "@hono/zod-validator": "^0.7.6", "openapi3-ts": "^4.5.0" }, "peerDependencies": { "hono": ">=4.3.6", "zod": "^4.0.0" } }, "sha512-KDfHqv/Wy4elVseZXgokbHxeWuqBL+AZfqsOMpEihBMUsk/fJ+bLIi3Sf70JFVpt1Ihui8RasYrInozt7ZBDIA=="],
 
