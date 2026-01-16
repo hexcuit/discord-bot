@@ -1,19 +1,30 @@
+#!/usr/bin/env bun
 /**
+ * Fix canary dependencies
+ *
  * Replace canary dependencies with stable versions if they exist on npm.
  * Used during changeset version to ensure releases use stable dependencies.
+ *
+ * Usage:
+ *   bun scripts/fix-canary-deps.ts
  */
 
-import { $ } from 'bun'
+import { exec } from 'node:child_process'
+import { readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
 
-const packageJsonPath = Bun.fileURLToPath(new URL('../package.json', import.meta.url))
-const packageJson = await Bun.file(packageJsonPath).json()
+const execAsync = promisify(exec)
+
+const packageJsonPath = join(import.meta.dirname, '../package.json')
+const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'))
 
 const canaryPattern = /^(\d+\.\d+\.\d+)-canary.*/
 
 async function checkNpmVersion(packageName: string, version: string): Promise<boolean> {
 	try {
-		const result = await $`npm view ${packageName}@${version} version`.quiet().text()
-		return result.trim() === version
+		const { stdout } = await execAsync(`npm view ${packageName}@${version} version`)
+		return stdout.trim() === version
 	} catch {
 		return false
 	}
@@ -48,11 +59,11 @@ for (const depType of ['dependencies', 'devDependencies'] as const) {
 }
 
 if (modified) {
-	await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, '\t')}\n`)
+	await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, '\t')}\n`)
 	console.log('\nUpdated package.json with stable versions')
 
 	console.log('Running bun install to update lockfile...')
-	await $`bun install`
+	await execAsync('bun install')
 	console.log('✓ Lockfile updated')
 } else {
 	console.log('\nNo changes needed')

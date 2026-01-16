@@ -1,18 +1,25 @@
-import {
-	ActionRowBuilder,
-	ButtonBuilder,
-	ButtonStyle,
-	EmbedBuilder,
-	StringSelectMenuBuilder,
-	StringSelectMenuOptionBuilder,
-} from 'discord.js'
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js'
+
 import { COLORS, ROLE_EMOJI } from '@/config'
-import { LOL_ROLES, type LolRole, type LolTeam, type MatchResult } from '@/constants'
-import { ROLE_LABELS } from '../shared/constants'
+import {
+	LOL_ROLES,
+	type LolRole,
+	type LolTeam,
+	type MatchResult,
+	ROLE_PREFERENCES,
+	type RolePreference,
+} from '@/constants'
+
 import type { Participant, TeamAssignments } from '../shared/types'
+
+import { ROLE_LABELS } from '../shared/constants'
 import { formatRole } from '../shared/utils'
 
-export const createRankedEmbed = (participants: Participant[], capacity: number, creatorId: string) => {
+export const createRankedEmbed = (
+	participants: Participant[],
+	capacity: number,
+	creatorId: string,
+) => {
 	const embed = new EmbedBuilder().setTitle('🏆 ランク戦募集').setColor(COLORS.primary)
 
 	const participantList =
@@ -62,21 +69,41 @@ export const createRankedButtons = (guildId: string, queueId: string, disabled: 
 	)
 }
 
-export const createRoleSelectMenu = (guildId: string, queueId: string, type: 'main' | 'sub') => {
-	const options = LOL_ROLES.map((role) =>
-		new StringSelectMenuOptionBuilder()
+/**
+ * ロール選択ボタンを作成
+ * @param guildId - ギルドID
+ * @param queueId - キューID
+ * @param originalMessageId - 元のメッセージID
+ * @param type - 'main' | 'sub' 選択中のロールタイプ
+ * @param selectedMainRole - 選択済みのメインロール（サブ選択時に無効化用）
+ */
+export const createRoleButtons = (
+	guildId: string,
+	queueId: string,
+	originalMessageId: string,
+	type: 'main' | 'sub',
+	selectedMainRole?: RolePreference,
+) => {
+	const buttons = ROLE_PREFERENCES.map((role) => {
+		const isDisabled = type === 'sub' && role === selectedMainRole
+		// sub選択時はmainRoleもcustomIdに含める
+		const customId =
+			type === 'sub'
+				? `queue:select_role:${guildId}:${queueId}:${originalMessageId}:${type}:${role}:${selectedMainRole}`
+				: `queue:select_role:${guildId}:${queueId}:${originalMessageId}:${type}:${role}`
+		return new ButtonBuilder()
+			.setCustomId(customId)
 			.setLabel(ROLE_LABELS[role])
-			.setValue(role)
 			.setEmoji(ROLE_EMOJI[role])
-			.setDescription(type === 'main' ? 'メインロールとして選択' : 'サブロールとして選択'),
-	)
+			.setStyle(isDisabled ? ButtonStyle.Secondary : ButtonStyle.Primary)
+			.setDisabled(isDisabled)
+	})
 
-	return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-		new StringSelectMenuBuilder()
-			.setCustomId(`queue:select_${type}_role:${guildId}:${queueId}`)
-			.setPlaceholder(type === 'main' ? 'メインロールを選択' : 'サブロールを選択')
-			.addOptions(options),
-	)
+	// 6ボタンを2行に分割 (3+3)
+	return [
+		new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(0, 3)),
+		new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(3, 6)),
+	]
 }
 
 export const createMatchEmbed = (
@@ -110,7 +137,8 @@ export const createMatchEmbed = (
 				? '🏆 ランク戦 - 結果確定'
 				: '🏆 ランク戦 - キャンセル'
 
-	const color = status === 'voting' ? COLORS.primary : status === 'confirmed' ? COLORS.success : COLORS.error
+	const color =
+		status === 'voting' ? COLORS.primary : status === 'confirmed' ? COLORS.success : COLORS.error
 
 	const embed = new EmbedBuilder().setTitle(title).setColor(color)
 
@@ -159,7 +187,11 @@ export const createVoteButtons = (matchId: string, disabled = false) => {
 	)
 }
 
-export const createRankedClosedEmbed = (participants: Participant[], capacity: number, creatorId: string) => {
+export const createRankedClosedEmbed = (
+	participants: Participant[],
+	capacity: number,
+	creatorId: string,
+) => {
 	const embed = new EmbedBuilder()
 		.setTitle('🏆 ランク戦募集終了')
 		.setDescription('この募集は終了しました。')

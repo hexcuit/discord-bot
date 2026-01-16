@@ -1,7 +1,9 @@
 import { EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js'
+
+import type { Command } from '@/types/command'
+
 import { COLORS } from '@/config'
 import { logger } from '@/lib/logger'
-import type { Command } from '@/types/command'
 import { apiClient } from '@/utils/api-client'
 
 export default {

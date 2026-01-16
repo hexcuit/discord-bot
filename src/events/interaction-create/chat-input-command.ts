@@ -1,19 +1,21 @@
 import type { CacheType, ChatInputCommandInteraction } from 'discord.js'
+
 import { logger } from '@/lib/logger'
 
-export const handleChatInputCommand = async (interaction: ChatInputCommandInteraction<CacheType>) => {
+export const handleChatInputCommand = async (
+	interaction: ChatInputCommandInteraction<CacheType>,
+) => {
 	const command = interaction.client.commands.get(interaction.commandName)
 	if (!command) {
 		return
 	}
 
 	try {
-		// コマンドの実行
 		await command.execute(interaction)
 	} catch (error) {
 		logger.error(`Error executing command "${interaction.commandName}":`, error)
 
-		const errorMessage = 'コマンドの実行中にエラーが発生しました。'
+		const errorMessage = 'An error occurred while executing the command.'
 
 		try {
 			if (interaction.replied || interaction.deferred) {
@@ -28,7 +30,10 @@ export const handleChatInputCommand = async (interaction: ChatInputCommandIntera
 				})
 			}
 		} catch (replyError) {
-			logger.error(`Failed to send error message for command "${interaction.commandName}":`, replyError)
+			logger.error(
+				`Failed to send error message for command "${interaction.commandName}":`,
+				replyError,
+			)
 		}
 	}
 }

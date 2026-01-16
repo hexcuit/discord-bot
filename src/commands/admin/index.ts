@@ -9,8 +9,10 @@ import {
 	PermissionFlagsBits,
 	SlashCommandBuilder,
 } from 'discord.js'
-import { COLORS } from '@/config'
+
 import type { Command } from '@/types/command'
+
+import { COLORS } from '@/config'
 import { apiClient } from '@/utils/api-client'
 
 const CONFIRM_TIMEOUT = 30000 // 30 seconds
@@ -25,12 +27,16 @@ export default {
 			group
 				.setName('reset')
 				.setDescription('データリセット')
-				.addSubcommand((sub) => sub.setName('all').setDescription('サーバー全体のランク・マッチ履歴を初期化'))
+				.addSubcommand((sub) =>
+					sub.setName('all').setDescription('サーバー全体のランク・マッチ履歴を初期化'),
+				)
 				.addSubcommand((sub) =>
 					sub
 						.setName('user')
 						.setDescription('特定ユーザーのランク・マッチ履歴を初期化')
-						.addUserOption((opt) => opt.setName('target').setDescription('リセット対象のユーザー').setRequired(true)),
+						.addUserOption((opt) =>
+							opt.setName('target').setDescription('リセット対象のユーザー').setRequired(true),
+						),
 				),
 		),
 
@@ -60,11 +66,82 @@ export default {
 } satisfies Command
 
 const executeResetAll = async (interaction: Parameters<Command['execute']>[0]) => {
-	// This feature is not yet implemented in the new API
-	await interaction.reply({
-		content: 'この機能は現在準備中です。個別のユーザーリセットは `/admin reset user` をご利用ください。',
+	const guildId = interaction.guildId as string
+
+	const confirmButton = new ButtonBuilder()
+		.setCustomId('admin:reset:all:confirm')
+		.setLabel('リセットする')
+		.setStyle(ButtonStyle.Danger)
+
+	const cancelButton = new ButtonBuilder()
+		.setCustomId('admin:reset:all:cancel')
+		.setLabel('キャンセル')
+		.setStyle(ButtonStyle.Secondary)
+
+	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton, cancelButton)
+
+	const embed = new EmbedBuilder()
+		.setTitle('⚠️ サーバー全体データリセット')
+		.setDescription(
+			'**この操作は取り消せません！**\n\n' +
+				'以下のデータが **全て** 削除されます：\n' +
+				'- 全ユーザーのレート・ランク\n' +
+				'- 全マッチ履歴\n\n' +
+				'本当にリセットしますか？',
+		)
+		.setColor(COLORS.error)
+
+	const response = await interaction.reply({
+		embeds: [embed],
+		components: [row],
 		flags: MessageFlags.Ephemeral,
 	})
+
+	try {
+		const buttonInteraction = await response.awaitMessageComponent({
+			componentType: ComponentType.Button,
+			time: CONFIRM_TIMEOUT,
+		})
+
+		if (buttonInteraction.customId === 'admin:reset:all:confirm') {
+			await buttonInteraction.deferUpdate()
+
+			const res = await apiClient.v1.guilds[':guildId'].stats.$delete({
+				param: { guildId },
+			})
+
+			if (!res.ok) {
+				await buttonInteraction.editReply({
+					content: 'リセットに失敗しました。',
+					embeds: [],
+					components: [],
+				})
+				return
+			}
+
+			const resultEmbed = new EmbedBuilder()
+				.setTitle('リセット完了')
+				.setDescription('サーバー全体のデータをリセットしました。')
+				.setColor(COLORS.success)
+
+			await buttonInteraction.editReply({
+				embeds: [resultEmbed],
+				components: [],
+			})
+		} else {
+			await buttonInteraction.update({
+				content: 'リセットをキャンセルしました。',
+				embeds: [],
+				components: [],
+			})
+		}
+	} catch {
+		await interaction.editReply({
+			content: 'タイムアウトしました。リセットはキャンセルされました。',
+			embeds: [],
+			components: [],
+		})
+	}
 }
 
 const executeResetUser = async (interaction: Parameters<Command['execute']>[0]) => {
@@ -116,7 +193,9 @@ const executeResetUser = async (interaction: Parameters<Command['execute']>[0]) 
 			if (!res.ok) {
 				await buttonInteraction.editReply({
 					content:
-						res.status === 404 ? `<@${targetUser.id}> のデータが見つかりませんでした。` : 'リセットに失敗しました。',
+						res.status === 404
+							? `<@${targetUser.id}> のデータが見つかりませんでした。`
+							: 'リセットに失敗しました。',
 					embeds: [],
 					components: [],
 				})

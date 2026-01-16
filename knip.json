@@ -1,0 +1,8 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"entry": ["src/index.ts", "scripts/*.ts"],
+	"project": ["src/**/*.ts", "scripts/**/*.ts"],
+	"ignore": ["src/**/*.test.ts", "dist/**"],
+	"ignoreDependencies": ["lefthook", "@hexcuit/server"],
+	"ignoreBinaries": ["dist/src/index.js"]
+}

@@ -1,7 +1,9 @@
 import { Collection } from 'discord.js'
+
+import type { Command } from '@/types/command'
+
 import * as commands from '@/commands'
 import { logger } from '@/lib/logger'
-import type { Command } from '@/types/command'
 
 type CommandData = {
 	name: string
@@ -21,7 +23,9 @@ type RawCommand = {
 const hasRequiredFields = (cmd: unknown): cmd is RawCommand => {
 	if (!cmd || typeof cmd !== 'object') return false
 	const obj = cmd as Record<string, unknown>
-	return typeof obj.command === 'object' && obj.command !== null && typeof obj.execute === 'function'
+	return (
+		typeof obj.command === 'object' && obj.command !== null && typeof obj.execute === 'function'
+	)
 }
 
 const hasValidCommandData = (data: unknown): data is CommandData => {

@@ -27,8 +27,8 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "docker-compose.yml"
-          target: "/opt/hexcuit-discord-bot/"
+          source: 'docker-compose.yml'
+          target: '/opt/hexcuit-discord-bot/'
 
       - name: Create .env file on VPS
         if: ${{ inputs.update_env }}

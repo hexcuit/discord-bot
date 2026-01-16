@@ -8,10 +8,10 @@ services:
     networks:
       - hexcuit-discord-bot-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
 networks:
   hexcuit-discord-bot-network:

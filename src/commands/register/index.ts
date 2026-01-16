@@ -1,8 +1,10 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js'
-import { COLORS, RANK_EMOJI } from '@/config'
+
 import type { LolDivision, LolTier } from '@/constants'
-import { logger } from '@/lib/logger'
 import type { Command } from '@/types/command'
+
+import { COLORS, RANK_EMOJI } from '@/config'
+import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
 
 export default {

@@ -1,17 +1,44 @@
 {
 	"$schema": "./node_modules/lefthook/schema.json",
 	"pre-commit": {
-		"parallel": true,
-		"commands": {
-			"check": {
-				"glob": "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}",
-				"run": "bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}",
+		"piped": true,
+		"jobs": [
+			{
+				"name": "generate-barrels.ts",
+				"glob": "src/{commands,events}/**/*",
+				"run": "bun scripts/generate-barrels.ts --fix && git add src/commands/index.ts src/events/index.ts"
+			},
+			{
+				"name": "oxlint",
+				"glob": "*.{js,ts,cjs,mjs,jsx,tsx}",
+				"run": "bun oxlint --fix --max-warnings=0 --type-aware --type-check {staged_files}",
 				"stage_fixed": true
 			},
-			"generate": {
-				"glob": "src/{commands,events}/*/index.ts",
-				"run": "bun run generate && git add src/commands/index.ts src/events/index.ts"
+			{
+				"name": "oxfmt",
+				"glob": "*",
+				"run": "bun oxfmt --no-error-on-unmatched-pattern {staged_files}",
+				"stage_fixed": true
 			}
-		}
+		]
+	},
+	"pre-push": {
+		"parallel": true,
+		"jobs": [
+			{
+				"name": "knip",
+				"run": "bun run knip"
+			},
+			{
+				"name": "lockfile-sync-check",
+				"glob": "{package.json,bun.lock}",
+				"run": "bun install --frozen-lockfile"
+			},
+			{
+				"name": "lint-on-lockfile-change",
+				"glob": "bun.lock",
+				"run": "bun run lint"
+			}
+		]
 	}
 }

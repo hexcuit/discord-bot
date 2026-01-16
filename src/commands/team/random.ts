@@ -1,5 +1,7 @@
 import { type ChatInputCommandInteraction, EmbedBuilder, type GuildMember } from 'discord.js'
+
 import { COLORS } from '@/config'
+
 import { getFilteredMembers, shuffleArray } from './shared'
 
 // 型定義
@@ -55,7 +57,9 @@ function createRandomTeamEmbeds(
 		{ name: 'Red Team', value: `${redTeam.members.length}人`, inline: true },
 		{
 			name: '除外メンバー',
-			value: excludedMembers.length ? excludedMembers.map((member) => `<@${member.id}>`).join('\n') : 'なし',
+			value: excludedMembers.length
+				? excludedMembers.map((member) => `<@${member.id}>`).join('\n')
+				: 'なし',
 			inline: false,
 		},
 	)

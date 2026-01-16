@@ -1,26 +1,27 @@
 import { Events } from 'discord.js'
+
 import type { Event } from '@/types/event'
+
 import { handleAutocomplete } from './autocomplete'
 import { handleButton } from './button'
-import { handleChatInputCommand } from './chatInput-command'
+import { handleChatInputCommand } from './chat-input-command'
 import { handleModalSubmit } from './modalSubmit'
 import { handleSelectMenu } from './selectMenu'
 
 export default {
 	name: Events.InteractionCreate,
 	once: false,
-	execute(interaction) {
-		// 受け取ったインタラクションの種類に応じてハンドラを呼び出す
+	async execute(interaction) {
 		if (interaction.isChatInputCommand()) {
-			handleChatInputCommand(interaction)
+			await handleChatInputCommand(interaction)
 		} else if (interaction.isButton()) {
-			handleButton(interaction)
+			await handleButton(interaction)
 		} else if (interaction.isAutocomplete()) {
-			handleAutocomplete(interaction)
+			await handleAutocomplete(interaction)
 		} else if (interaction.isModalSubmit()) {
-			handleModalSubmit(interaction)
+			await handleModalSubmit(interaction)
 		} else if (interaction.isStringSelectMenu()) {
-			handleSelectMenu(interaction)
+			await handleSelectMenu(interaction)
 		}
 	},
 } satisfies Event<Events.InteractionCreate>

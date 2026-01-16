@@ -2,13 +2,12 @@ import { type ChatInputCommandInteraction, GuildMember } from 'discord.js'
 
 const ERROR_MESSAGES = {
 	SERVER_ONLY: 'このコマンドはサーバー内でのみ使用できます。',
-	VOICE_CHANNEL_REQUIRED: 'このコマンドを使用するには、ボイスチャンネルに参加している必要があります。',
+	VOICE_CHANNEL_REQUIRED:
+		'このコマンドを使用するには、ボイスチャンネルに参加している必要があります。',
 	INSUFFICIENT_MEMBERS: 'チーム分けには最低2人必要です。',
 } as const
 
-export { ERROR_MESSAGES }
-
-export function validateUserAccess(member: unknown): {
+function validateUserAccess(member: unknown): {
 	isValid: boolean
 	member?: GuildMember
 	error?: string
@@ -25,7 +24,7 @@ export function validateUserAccess(member: unknown): {
 	return { isValid: true, member }
 }
 
-export function parseExcludedUserIds(input?: string | null): string[] {
+function parseExcludedUserIds(input?: string | null): string[] {
 	if (!input) {
 		return []
 	}
@@ -68,12 +67,18 @@ export async function getFilteredMembers(interaction: ChatInputCommandInteractio
 	}
 	const voiceChannel = member.voice.channel
 
-	const channelMembers = Array.from(voiceChannel.members.filter((voiceMember) => !voiceMember.user.bot).values())
+	const channelMembers = Array.from(
+		voiceChannel.members.filter((voiceMember) => !voiceMember.user.bot).values(),
+	)
 
 	const excludeOption = interaction.options.getString('exclude')
 	const excludedUserIds = new Set(parseExcludedUserIds(excludeOption))
-	const excludedMembers = channelMembers.filter((voiceMember) => excludedUserIds.has(voiceMember.id))
-	const filteredMembers = channelMembers.filter((voiceMember) => !excludedUserIds.has(voiceMember.id))
+	const excludedMembers = channelMembers.filter((voiceMember) =>
+		excludedUserIds.has(voiceMember.id),
+	)
+	const filteredMembers = channelMembers.filter(
+		(voiceMember) => !excludedUserIds.has(voiceMember.id),
+	)
 
 	if (filteredMembers.length < 2) {
 		return { success: false, error: ERROR_MESSAGES.INSUFFICIENT_MEMBERS }

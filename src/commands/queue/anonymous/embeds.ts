@@ -1,5 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js'
+
 import { COLORS } from '@/config'
+
 import { CAPACITY } from '../shared/constants'
 
 export const createEmbed = (participantCount: number, capacity: number, creatorId: string) => {
@@ -42,7 +44,10 @@ export const createButtons = (guildId: string, queueId: string, disabled: boolea
 }
 
 export const createFullEmbed = (participantCount: number, creatorId: string) => {
-	const embed = new EmbedBuilder().setTitle('募集完了!').setDescription('定員に達しました!').setColor(COLORS.success)
+	const embed = new EmbedBuilder()
+		.setTitle('募集完了!')
+		.setDescription('定員に達しました!')
+		.setColor(COLORS.success)
 
 	embed.addFields({
 		name: '参加者',
@@ -55,7 +60,11 @@ export const createFullEmbed = (participantCount: number, creatorId: string) => 
 	return embed
 }
 
-export const createClosedEmbed = (participantCount: number, capacity: number, creatorId: string) => {
+export const createClosedEmbed = (
+	participantCount: number,
+	capacity: number,
+	creatorId: string,
+) => {
 	const embed = new EmbedBuilder()
 		.setTitle('募集終了（匿名）')
 		.setDescription('この募集は終了しました。')

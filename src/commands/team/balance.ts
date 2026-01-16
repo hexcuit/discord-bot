@@ -1,7 +1,9 @@
 import { type ChatInputCommandInteraction, EmbedBuilder, type GuildMember } from 'discord.js'
+
 import { COLORS, RANK_EMOJI } from '@/config'
 import { logger } from '@/lib/logger'
 import { apiClient } from '@/utils/api-client'
+
 import { getFilteredMembers } from './shared'
 
 // 型定義
@@ -111,7 +113,10 @@ const formatTeamMemberFieldWithRank = (teamMember: TeamMemberWithRank) => {
 	}
 }
 
-function generateAllTeamCombinations(members: GuildMember[], rankData: RankInfo[]): TeamCombination[] {
+function generateAllTeamCombinations(
+	members: GuildMember[],
+	rankData: RankInfo[],
+): TeamCombination[] {
 	const membersWithRank: TeamMemberWithRank[] = members.map((member) => {
 		const rankInfo = rankData.find((r) => r.discordId === member.id)
 		const tier = rankInfo?.tier || 'UNRANKED'
@@ -139,10 +144,10 @@ function generateAllTeamCombinations(members: GuildMember[], rankData: RankInfo[
 		if (!firstMember) return []
 
 		const remainingMembers = availableMembers.slice(1)
-		const combinationsWithFirst = generateMemberCombinations(remainingMembers, requiredSize - 1).map((combination) => [
-			firstMember,
-			...combination,
-		])
+		const combinationsWithFirst = generateMemberCombinations(
+			remainingMembers,
+			requiredSize - 1,
+		).map((combination) => [firstMember, ...combination])
 		const combinationsWithoutFirst = generateMemberCombinations(remainingMembers, requiredSize)
 
 		return [...combinationsWithFirst, ...combinationsWithoutFirst]
@@ -199,7 +204,9 @@ function createBalanceTeamEmbeds(
 	const powerDifference = Math.abs(blueTeam.totalRankPoints - redTeam.totalRankPoints)
 
 	const combinationInfo = options?.combinationInfo
-	const combinationSummary = combinationInfo ? `${combinationInfo.current}/${combinationInfo.total}` : 'N/A'
+	const combinationSummary = combinationInfo
+		? `${combinationInfo.current}/${combinationInfo.total}`
+		: 'N/A'
 	const excludedMembers = options?.excludedMembers ?? []
 	const teamInfoEmbed = new EmbedBuilder().setTitle('Team Info').addFields(
 		{ name: 'Blue Team', value: `${blueTeam.members.length}人`, inline: true },
@@ -227,7 +234,9 @@ function createBalanceTeamEmbeds(
 	)
 	teamInfoEmbed.addFields({
 		name: '除外メンバー',
-		value: excludedMembers.length ? excludedMembers.map((member) => `<@${member.id}>`).join('\n') : 'なし',
+		value: excludedMembers.length
+			? excludedMembers.map((member) => `<@${member.id}>`).join('\n')
+			: 'なし',
 		inline: false,
 	})
 
@@ -273,7 +282,9 @@ export async function executeBalance(interaction: ChatInputCommandInteraction) {
 			total: eligibleCombinations.length,
 		}
 	} else {
-		const sortedByPowerDifference = [...allTeamCombinations].sort((a, b) => a.powerDifference - b.powerDifference)
+		const sortedByPowerDifference = [...allTeamCombinations].sort(
+			(a, b) => a.powerDifference - b.powerDifference,
+		)
 		chosenCombination = sortedByPowerDifference[0]
 		combinationSummary = { current: 1, total: allTeamCombinations.length }
 	}
@@ -283,10 +294,14 @@ export async function executeBalance(interaction: ChatInputCommandInteraction) {
 		return
 	}
 
-	const responseEmbeds = createBalanceTeamEmbeds(chosenCombination.blueTeam, chosenCombination.redTeam, {
-		combinationInfo: combinationSummary,
-		excludedMembers,
-	})
+	const responseEmbeds = createBalanceTeamEmbeds(
+		chosenCombination.blueTeam,
+		chosenCombination.redTeam,
+		{
+			combinationInfo: combinationSummary,
+			excludedMembers,
+		},
+	)
 
 	await interaction.editReply({ embeds: responseEmbeds })
 }

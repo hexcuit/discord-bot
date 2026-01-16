@@ -1,7 +1,9 @@
 import { type Client, Events } from 'discord.js'
+
+import type { Event } from '@/types/event'
+
 import * as events from '@/events'
 import { logger } from '@/lib/logger'
-import type { Event } from '@/types/event'
 
 type RawEvent = {
 	name: string
@@ -13,7 +15,11 @@ type RawEvent = {
 const hasRequiredFields = (evt: unknown): evt is RawEvent => {
 	if (!evt || typeof evt !== 'object') return false
 	const obj = evt as Record<string, unknown>
-	return typeof obj.name === 'string' && typeof obj.once === 'boolean' && typeof obj.execute === 'function'
+	return (
+		typeof obj.name === 'string' &&
+		typeof obj.once === 'boolean' &&
+		typeof obj.execute === 'function'
+	)
 }
 
 const isValidDiscordEvent = (name: string): boolean => {

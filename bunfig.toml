@@ -1,7 +1,2 @@
 [install]
 exact = true
-
-[test]
-preload = ["./test/setup.ts"]
-coverageSkipTestFiles = true
-coveragePathIgnorePatterns = ["**/test/**"]

@@ -1,5 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js'
+
 import type { Command } from '@/types/command'
+
 import { executeBalance } from './balance'
 import { executeRandom } from './random'
 
@@ -14,7 +16,9 @@ export default {
 				.addStringOption((option) =>
 					option
 						.setName('exclude')
-						.setDescription('チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定')
+						.setDescription(
+							'チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定',
+						)
 						.setRequired(false),
 				),
 		)
@@ -25,7 +29,9 @@ export default {
 				.addStringOption((option) =>
 					option
 						.setName('exclude')
-						.setDescription('チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定')
+						.setDescription(
+							'チーム分けから除外するユーザーを @メンションまたはIDでスペース区切り指定',
+						)
 						.setRequired(false),
 				),
 		),

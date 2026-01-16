@@ -28,7 +28,10 @@
 
 		// Path aliases
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@test/*": ["./mocks/*"]
 		}
-	}
+	},
+	"include": ["src/**/*", "scripts/**/*", "mocks/**/*"],
+	"exclude": ["node_modules", "dist"]
 }
