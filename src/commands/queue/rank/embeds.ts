@@ -86,11 +86,14 @@ export const createRoleButtons = (
 ) => {
 	const buttons = ROLE_PREFERENCES.map((role) => {
 		const isDisabled = type === 'sub' && role === selectedMainRole
-		// sub選択時はmainRoleもcustomIdに含める
+		// customIdは100文字制限があるため短縮形式を使用: q:sr:guildId:queueId:msgId:t:r[:mainR]
+		const t = type === 'main' ? 'm' : 's'
+		const r = role.slice(0, 3) // TOP, JUN, MID, BOT, SUP, FIL
+		const mainR = selectedMainRole?.slice(0, 3)
 		const customId =
 			type === 'sub'
-				? `queue:select_role:${guildId}:${queueId}:${originalMessageId}:${type}:${role}:${selectedMainRole}`
-				: `queue:select_role:${guildId}:${queueId}:${originalMessageId}:${type}:${role}`
+				? `q:sr:${guildId}:${queueId}:${originalMessageId}:${t}:${r}:${mainR}`
+				: `q:sr:${guildId}:${queueId}:${originalMessageId}:${t}:${r}`
 		return new ButtonBuilder()
 			.setCustomId(customId)
 			.setLabel(ROLE_LABELS[role])
