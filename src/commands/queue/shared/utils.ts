@@ -21,12 +21,11 @@ const expandRole = (short: string | undefined): RolePreference | undefined => {
 export const parseCustomId = (customId: string) => {
 	const parts = customId.split(':')
 
-	// 短縮形式 (q:sr:...) かどうか判定
-	const isShortFormat = parts[0] === 'q'
+	// 短縮形式 (queue:sr:...) かどうか判定（action が 'sr' の場合）
+	const isShortFormat = parts[1] === 'sr'
 
-	// コマンドとアクションを展開
-	const command = isShortFormat && parts[0] === 'q' ? 'queue' : parts[0]
-	const action = isShortFormat && parts[1] === 'sr' ? 'select_role' : parts[1]
+	// アクションを展開
+	const action = isShortFormat ? 'select_role' : parts[1]
 
 	// ロールタイプを展開 (m -> main, s -> sub)
 	const roleType =
@@ -37,7 +36,7 @@ export const parseCustomId = (customId: string) => {
 	const mainRole = isShortFormat ? expandRole(parts[7]) : (parts[7] as RolePreference | undefined)
 
 	return {
-		command,
+		command: parts[0],
 		action,
 		guildId: parts[2],
 		queueId: parts[3],
