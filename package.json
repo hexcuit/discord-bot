@@ -28,7 +28,7 @@
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "0.5.2",
-		"@changesets/cli": "2.29.8",
+		"@changesets/cli": "2.31.1",
 		"@vitest/coverage-v8": "4.0.18",
 		"knip": "5.82.1",
 		"lefthook": "2.0.15",
