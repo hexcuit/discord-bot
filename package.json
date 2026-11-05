@@ -30,7 +30,7 @@
 		"@changesets/changelog-github": "0.5.2",
 		"@changesets/cli": "2.29.8",
 		"@vitest/coverage-v8": "4.0.18",
-		"knip": "5.82.1",
+		"knip": "5.88.1",
 		"lefthook": "2.0.15",
 		"oxfmt": "0.26.0",
 		"oxlint": "1.41.0",
